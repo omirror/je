@@ -8,5 +8,5 @@ in reactions to alarms, simple workflows and everything in between.
 
 ## TODO
 
-[ ] Split out worker to separate process
-[ ] Build simple CLI to invoke and manage jobs
+* [ ] Split out worker to separate process
+* [ ] Build simple CLI to invoke and manage jobs
