@@ -1,41 +1,14 @@
 package worker
 
 import (
-	"io/ioutil"
+	"io"
 	"os/exec"
 	"syscall"
 )
 
-// Result ...
-type Result struct {
-	status   int
-	logs     []byte
-	response []byte
-}
-
-// String ...
-func (res *Result) String() string {
-	return string(res.logs[:])
-}
-
-// Status ...
-func (res *Result) Status() int {
-	return res.status
-}
-
-// Logs ...
-func (res *Result) Logs() []byte {
-	return res.logs
-}
-
-// Response ...
-func (res *Result) Response() []byte {
-	return res.response
-}
-
 // Run ...
-func Run(binary string) (res *Result, err error) {
-	res = &Result{}
+func Run(binary string) (*Result, error) {
+	res := NewResult()
 
 	cmd := exec.Command(binary)
 
@@ -49,24 +22,21 @@ func Run(binary string) (res *Result, err error) {
 		return res, err
 	}
 
-	if err := cmd.Start(); err != nil {
+	if err = cmd.Start(); err != nil {
 		return res, err
 	}
 
-	logs, err := ioutil.ReadAll(stderr)
+	// TODO: Check written < len(stderr)
+	_, err = io.Copy(res.Log, stderr)
 	if err != nil {
 		return res, err
 	}
 
-	//res.logs = make([]byte, len(logs))
-	res.logs = logs[:]
-
-	response, err := ioutil.ReadAll(stdout)
+	// TODO: Check written < len(stdout)
+	_, err = io.Copy(res.Out, stdout)
 	if err != nil {
 		return res, err
 	}
-	//res.response = make([]byte, len(response))
-	res.response = response[:]
 
 	if err := cmd.Wait(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
@@ -77,7 +47,7 @@ func Run(binary string) (res *Result, err error) {
 			// defined for both Unix and Windows and in both cases has
 			// an ExitStatus() method with the same signature.
 			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
-				res.status = status.ExitStatus()
+				res.Status = status.ExitStatus()
 			}
 		} else {
 			return res, err

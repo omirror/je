@@ -29,8 +29,8 @@ func (j *Job) Start() error {
 }
 
 func (j *Job) Finish(res *worker.Result) error {
-	j.Status = res.Status()
-	j.Response = string(res.Response())
+	j.Status = res.Status
+	j.Response = res.Out.String()
 	j.EndedAt = time.Now()
 	return db.Save(j)
 }

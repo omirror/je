@@ -3,6 +3,7 @@ package je
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -131,7 +132,8 @@ func (s *Server) NewJobHandler() httprouter.Handle {
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
 			return
 		}
-		f.Write(res.Logs())
+		// TODO: Check if written < len(res.Log)?
+		_, err = io.Copy(f, res.Log)
 		if err := f.Close(); err != nil {
 			log.Printf("error closing logfile for job: %s", err)
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
