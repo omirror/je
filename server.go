@@ -25,10 +25,6 @@ import (
 	"git.mills.io/prologic/je/worker"
 )
 
-var (
-	db *storm.DB
-)
-
 // Counters ...
 type Counters struct {
 	r metrics.Registry
