@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/prologic/je/worker"
+	"git.mills.io/prologic/je/worker"
 )
 
 // Job ...

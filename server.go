@@ -22,7 +22,7 @@ import (
 	// Routing
 	"github.com/julienschmidt/httprouter"
 
-	"github.com/prologic/je/worker"
+	"git.mills.io/prologic/je/worker"
 )
 
 // Counters ...
