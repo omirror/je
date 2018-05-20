@@ -22,3 +22,6 @@
 [submodule "vendor/github.com/coreos/bbolt"]
 	path = vendor/github.com/coreos/bbolt
 	url = https://github.com/coreos/bbolt
+[submodule "vendor/git.mills.io/prologic/je"]
+	path = vendor/git.mills.io/prologic/je
+	url = https://git.mills.io/prologic/je.git
