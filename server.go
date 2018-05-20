@@ -1,4 +1,4 @@
-package main
+package je
 
 import (
 	"encoding/json"
@@ -23,6 +23,10 @@ import (
 	"github.com/julienschmidt/httprouter"
 
 	"git.mills.io/prologic/je/worker"
+)
+
+var (
+	db *storm.DB
 )
 
 // Counters ...
