@@ -1,0 +1,24 @@
+[submodule "vendor/github.com/asdine/storm"]
+	path = vendor/github.com/asdine/storm
+	url = https://github.com/asdine/storm
+[submodule "vendor/github.com/namsral/flag"]
+	path = vendor/github.com/namsral/flag
+	url = https://github.com/namsral/flag
+[submodule "vendor/github.com/stretchr/testify"]
+	path = vendor/github.com/stretchr/testify
+	url = https://github.com/stretchr/testify
+[submodule "vendor/github.com/unrolled/logger"]
+	path = vendor/github.com/unrolled/logger
+	url = https://github.com/unrolled/logger
+[submodule "vendor/github.com/rcrowley/go-metrics"]
+	path = vendor/github.com/rcrowley/go-metrics
+	url = https://github.com/rcrowley/go-metrics
+[submodule "vendor/github.com/thoas/stats"]
+	path = vendor/github.com/thoas/stats
+	url = https://github.com/thoas/stats
+[submodule "vendor/github.com/julienschmidt/httprouter"]
+	path = vendor/github.com/julienschmidt/httprouter
+	url = https://github.com/julienschmidt/httprouter
+[submodule "vendor/github.com/coreos/bbolt"]
+	path = vendor/github.com/coreos/bbolt
+	url = https://github.com/coreos/bbolt
