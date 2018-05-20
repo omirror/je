@@ -1,6 +1,6 @@
 workspace:
   base: /go
-  path: src/github.com/prologic/msgbus
+  path: src/github.com/prologic/je
 
 pipeline:
   build:
@@ -10,7 +10,7 @@ pipeline:
 
   docker:
     image: plugins/docker
-    repo: r.mills.io/prologic/msgbus
+    repo: r.mills.io/prologic/je
     registry: r.mills.io
     secrets: [ docker_username, docker_password ]
 
