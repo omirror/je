@@ -9,6 +9,5 @@ import (
 func TestZeroConfig(t *testing.T) {
 	assert := assert.New(t)
 
-	cfg := Config{}
 	assert.True(true)
 }

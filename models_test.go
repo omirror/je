@@ -35,7 +35,8 @@ func TestZeroJob(t *testing.T) {
 	assert.Equal(j.ID, 0)
 	assert.Equal(j.Name, "")
 	assert.Equal(j.CreatedAt, time.Time{})
-	assert.Equal(j.UpdatedAt, time.Time{})
+	assert.Equal(j.StartedAt, time.Time{})
+	assert.Equal(j.EndedAt, time.Time{})
 }
 
 func TestNewJob(t *testing.T) {
@@ -44,19 +45,6 @@ func TestNewJob(t *testing.T) {
 	j, err := NewJob("foo")
 	assert.Nil(err, nil)
 
-	assert.NotEqual(j.ID, 1)
+	assert.Equal(j.ID, 1)
 	assert.Equal(j.Name, "foo")
-}
-
-func TestJobSetStatus(t *testing.T) {
-	assert := assert.New(t)
-
-	j, err := NewJob("foo")
-	assert.Nil(err, nil)
-
-	assert.NotEqual(j.ID, 1)
-	assert.Equal(j.Name, "foo")
-
-	j.SetStatus(1)
-	assert.Equal(j.Status, 1)
 }
