@@ -7,10 +7,11 @@ import (
 )
 
 // Run ...
-func Run(binary string) (*Result, error) {
+func Run(binary string, args []string, input io.Reader) (*Result, error) {
 	res := NewResult()
 
-	cmd := exec.Command(binary)
+	cmd := exec.Command(binary, args...)
+	cmd.Stdin = input
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {

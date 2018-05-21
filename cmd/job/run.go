@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 
@@ -14,21 +16,26 @@ import (
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
-	Use:     "run [flags] <name>",
+	Use:     "run [flags] <name> [--] [args]",
 	Aliases: []string{"exec"},
 	Short:   "Runs the given job type by name",
 	Long: `This runs the job given by the provided name argument and waits
 for it to complete before returning and printing the result of the job and
-its output log.`,
+its output log. Arguments to the job can be provided but if those arguments
+are themselves command-line options to an execute use -- [args]`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
 		raw := viper.GetBool("raw")
+		interactive := viper.GetBool("interactive")
+
 		client := client.NewClient(uri, nil)
 
-		name := args[0]
-
-		run(client, name, raw)
+		if interactive {
+			run(client, args[0], args[1:], os.Stdin, raw)
+		} else {
+			run(client, args[0], args[1:], nil, raw)
+		}
 	},
 }
 
@@ -43,8 +50,8 @@ func init() {
 	viper.SetDefault("raw", false)
 }
 
-func run(client *client.Client, name string, raw bool) {
-	res, err := client.Run(name)
+func run(client *client.Client, name string, args []string, input io.Reader, raw bool) {
+	res, err := client.Run(name, args, input)
 	if err != nil {
 		log.Errorf("error running job %s: %s", name, err)
 		return

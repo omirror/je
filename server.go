@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	// Database
 	"github.com/asdine/storm"
@@ -140,11 +141,15 @@ func (s *Server) CreateHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		s.counters.Inc("n_create")
 
+		q := r.URL.Query()
+
 		name := p.ByName("name")
 		if name == "" {
 			http.Error(w, "Bad Request", http.StatusBadRequest)
 			return
 		}
+
+		args := strings.Fields(q.Get("args"))
 
 		job, err := NewJob(name)
 		if err != nil {
@@ -161,7 +166,7 @@ func (s *Server) CreateHandler() httprouter.Handle {
 			return
 		}
 
-		res, err := worker.Run(name)
+		res, err := worker.Run(name, args, r.Body)
 		if err != nil {
 			log.Printf("error executing job: %s", err)
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
