@@ -18,19 +18,7 @@ Retrives informatoin about a job, its status, created and finished times and res
 
 * **Returns:** 200 OK
 
-> Returns a JSON array (*only containing 1 elemtn*) of `Job` structs that have the following attributes:
-
-```#!go
-type Job struct {
-	ID        int    `storm:"id,increment"`
-	Name      string `storm:"index"`
-	Status    int    `storm:"index"`
-	Response  string
-	CreatedAt time.Time `storm:"index"`
-	StartedAt time.Time `storm:"index"`
-	EndedAt   time.Time `storm:"index"`
-}
-```
+> Returns a JSON array (*only containing 1 element*) of [`Job`](#Job) objects.
 
 ## GET /search
 
@@ -38,16 +26,20 @@ Returns all known jobs and their information.
 
 * **Returns:** 200 OK
 
-> Returns a JOSN array of all jobs as `Job` structs with the following attributes:
+> Returns a JOSN array of all jobs as [`Job`](#Job) objects.
 
-```#!go
-type Job struct {
-	ID        int    `storm:"id,increment"`
-	Name      string `storm:"index"`
-	Status    int    `storm:"index"`
-	Response  string
-	CreatedAt time.Time `storm:"index"`
-	StartedAt time.Time `storm:"index"`
-	EndedAt   time.Time `storm:"index"`
+# Appendix
+
+## Job
+
+```#!json
+{
+  "ID": 1,
+  "Name": "hello.sh",
+  "Status": -1,
+  "Response": "Hello\n",
+  "CreatedAt": "2018-05-20T22:09:13.272775819-07:00",
+  "StartedAt": "2018-05-20T22:09:13.276717365-07:00",
+  "EndedAt": "2018-05-20T22:09:13.284525808-07:00"
 }
 ```
