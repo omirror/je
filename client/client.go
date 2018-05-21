@@ -79,8 +79,8 @@ func (c *Client) Logs(id string) (r io.Reader, err error) {
 }
 
 // Run ...
-func (c *Client) Run(name string) (res *je.Job, err error) {
-	url := fmt.Sprintf("%s/job/%s", c.url, name)
+func (c *Client) Run(name string) (res []*je.Job, err error) {
+	url := fmt.Sprintf("%s/%s", c.url, name)
 	client := &http.Client{}
 
 	request, err := http.NewRequest("POST", url, nil)
