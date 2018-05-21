@@ -15,8 +15,7 @@ type Result struct {
 // pre-initialized ready for use
 func NewResult() *Result {
 	return &Result{
-		Status: -1,
-		Log:    new(bytes.Buffer),
-		Out:    new(bytes.Buffer),
+		Log: new(bytes.Buffer),
+		Out: new(bytes.Buffer),
 	}
 }
