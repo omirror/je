@@ -18,7 +18,7 @@ Retrives informatoin about a job, its status, created and finished times and res
 
 * **Returns:** 200 OK
 
-> Returns a JSON array (*only containing 1 element*) of [`Job`](#Job) objects.
+> Returns a JSON array (*only containing 1 element*) of [`Job`](#job) objects.
 
 ## GET /search
 
@@ -26,7 +26,7 @@ Returns all known jobs and their information.
 
 * **Returns:** 200 OK
 
-> Returns a JOSN array of all jobs as [`Job`](#Job) objects.
+> Returns a JOSN array of all jobs as [`Job`](#job) objects.
 
 # Appendix
 
