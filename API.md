@@ -36,7 +36,7 @@ Returns all known jobs and their information.
 {
   "ID": 1,
   "Name": "hello.sh",
-  "Status": -1,
+  "Status": 0,
   "Response": "Hello\n",
   "CreatedAt": "2018-05-20T22:09:13.272775819-07:00",
   "StartedAt": "2018-05-20T22:09:13.276717365-07:00",
