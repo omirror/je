@@ -68,18 +68,28 @@ type Server struct {
 	stats    *stats.Stats
 }
 
-// SearchJobsHandler ...
-func (s *Server) SearchJobsHandler() httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		s.counters.Inc("n_searchjobs")
-
+// SearchHandler ...
+func (s *Server) SearchHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		var jobs []*Job
 
-		err := db.All(&jobs)
-		if err != nil {
-			log.Printf("error querying jobs index: %s", err)
-			http.Error(w, "Internal Error", http.StatusInternalServerError)
-			return
+		s.counters.Inc("n_search")
+
+		id := SafeParseInt(p.ByName("id"), 0)
+
+		if id > 0 {
+			err := db.Find("ID", id, &jobs)
+			if err != nil && err == storm.ErrNotFound {
+				http.Error(w, "Not Found", http.StatusNotFound)
+				return
+			}
+		} else {
+			err := db.All(&jobs)
+			if err != nil {
+				log.Printf("error querying jobs index: %s", err)
+				http.Error(w, "Internal Error", http.StatusInternalServerError)
+				return
+			}
 		}
 
 		out, err := json.Marshal(jobs)
@@ -93,10 +103,42 @@ func (s *Server) SearchJobsHandler() httprouter.Handle {
 	}
 }
 
-// NewJobHandler ...
-func (s *Server) NewJobHandler() httprouter.Handle {
+// LogsHandler ...
+func (s *Server) LogsHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		s.counters.Inc("n_newjob")
+		var job Job
+
+		s.counters.Inc("n_logs")
+
+		id := SafeParseInt(p.ByName("id"), 0)
+
+		if id <= 0 {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		err := db.One("ID", id, &job)
+		if err != nil && err == storm.ErrNotFound {
+			http.Error(w, "Not Found", http.StatusNotFound)
+			return
+		}
+
+		f, err := os.Open(fmt.Sprintf("%d.log", id))
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		defer f.Close()
+
+		w.Header().Set("Context-Type", "text/plaino")
+		io.Copy(w, f)
+	}
+}
+
+// CreateHandler ...
+func (s *Server) CreateHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		s.counters.Inc("n_create")
 
 		name := p.ByName("name")
 		if name == "" {
@@ -156,32 +198,6 @@ func (s *Server) NewJobHandler() httprouter.Handle {
 	}
 }
 
-// ViewJobHandler ...
-func (s *Server) ViewJobHandler() httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		var job Job
-
-		s.counters.Inc("n_viewjob")
-
-		id := SafeParseInt(p.ByName("id"), 0)
-
-		err := db.One("ID", id, &job)
-		if err != nil && err == storm.ErrNotFound {
-			http.Error(w, "Not Found", http.StatusNotFound)
-			return
-		}
-
-		out, err := json.Marshal(job)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "text/json")
-		w.Write(out)
-	}
-}
-
 // StatsHandler ...
 func (s *Server) StatsHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -210,9 +226,9 @@ func (s *Server) initRoutes() {
 	s.router.Handler("GET", "/debug/metrics", exp.ExpHandler(s.counters.r))
 	s.router.GET("/debug/stats", s.StatsHandler())
 
-	s.router.GET("/job/:id", s.ViewJobHandler())
-	s.router.POST("/job/:name", s.NewJobHandler())
-	s.router.GET("/jobs", s.SearchJobsHandler())
+	s.router.POST("/:name", s.CreateHandler())
+	s.router.GET("/search/:id", s.SearchHandler())
+	s.router.GET("/logs/:id", s.LogsHandler())
 }
 
 // NewServer ...
