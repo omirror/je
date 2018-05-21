@@ -48,6 +48,14 @@ func init() {
 	)
 	viper.BindPFlag("raw", runCmd.Flags().Lookup("raw"))
 	viper.SetDefault("raw", false)
+
+	runCmd.Flags().BoolP(
+		"interactive", "i", false,
+		"Pass stdin as input to job",
+	)
+	viper.BindPFlag("interactive", runCmd.Flags().Lookup("interactive"))
+	viper.SetDefault("interactive", false)
+
 }
 
 func run(client *client.Client, name string, args []string, input io.Reader, raw bool) {
