@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	// Database
 	"github.com/asdine/storm"
@@ -25,6 +26,10 @@ import (
 	"github.com/julienschmidt/httprouter"
 
 	"git.mills.io/prologic/je/worker"
+)
+
+const (
+	DefaultWorkers = 16
 )
 
 // Counters ...
@@ -55,10 +60,19 @@ func (c *Counters) DecBy(name string, n int64) {
 	metrics.GetOrRegisterCounter(name, c.r).Dec(n)
 }
 
+// Options ...
+type Options struct {
+	Workers int
+}
+
 // Server ...
 type Server struct {
-	bind   string
-	config Config
+	bind string
+
+	// Worker Pool
+	pool *worker.Pool
+
+	// Router
 	router *httprouter.Router
 
 	// Logger
@@ -87,7 +101,7 @@ func (s *Server) SearchHandler() httprouter.Handle {
 		} else {
 			err := db.All(&jobs)
 			if err != nil {
-				log.Printf("error querying jobs index: %s", err)
+				log.Errorf("error querying jobs index: %s", err)
 				http.Error(w, "Internal Error", http.StatusInternalServerError)
 				return
 			}
@@ -151,46 +165,16 @@ func (s *Server) CreateHandler() httprouter.Handle {
 
 		args := strings.Fields(q.Get("args"))
 
-		job, err := NewJob(name)
+		job, err := NewJob(name, args, r.Body)
 		if err != nil {
-			log.Printf("error creating new job: %s", err)
+			log.Errorf("error creating new job: %s", err)
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
 			return
 		}
 
-		// TODO: Push new job to queue for workers
-		err = job.Start()
+		err = s.pool.Submit(job)
 		if err != nil {
-			log.Printf("error starting job: %s", err)
-			http.Error(w, "Internal Error", http.StatusInternalServerError)
-			return
-		}
-
-		res, err := worker.Run(name, args, r.Body)
-		if err != nil {
-			log.Printf("error executing job: %s", err)
-			http.Error(w, "Internal Error", http.StatusInternalServerError)
-			return
-		}
-
-		f, err := os.OpenFile(fmt.Sprintf("%d.log", job.ID), os.O_RDWR|os.O_CREATE, 0644)
-		if err != nil {
-			log.Printf("error updates logs for job: %s", err)
-			http.Error(w, "Internal Error", http.StatusInternalServerError)
-			return
-		}
-		// TODO: Check if written < len(res.Log)?
-		_, err = io.Copy(f, res.Log)
-		if err := f.Close(); err != nil {
-			log.Printf("error closing logfile for job: %s", err)
-			http.Error(w, "Internal Error", http.StatusInternalServerError)
-			return
-		}
-
-		// TODO: Persist job status, response and logs
-		err = job.Finish(res)
-		if err != nil {
-			log.Printf("error updating job: %s", err)
+			log.Errorf("error submitting job to pool: %s", err)
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
 			return
 		}
@@ -237,17 +221,30 @@ func (s *Server) initRoutes() {
 }
 
 // NewServer ...
-func NewServer(bind string, config Config) *Server {
+func NewServer(bind string, options *Options) *Server {
+	var (
+		workers int
+	)
+
+	if options != nil {
+		workers = options.Workers
+	} else {
+		workers = DefaultWorkers
+	}
+
 	server := &Server{
-		bind:   bind,
-		config: config,
+		bind: bind,
+
+		// Worker Pool
+		pool: worker.NewPool(workers),
+
+		// Router
 		router: httprouter.New(),
 
 		// Logger
 		logger: logger.New(logger.Options{
 			Prefix:               "je",
 			RemoteAddressHeaders: []string{"X-Forwarded-For"},
-			OutputFlags:          log.LstdFlags,
 		}),
 
 		// Stats/Metrics
