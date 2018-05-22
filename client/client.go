@@ -81,7 +81,7 @@ func (c *Client) Logs(id string) (r io.Reader, err error) {
 
 // Run ...
 func (c *Client) Run(name string, args []string, input io.Reader) (res []*je.Job, err error) {
-	url := fmt.Sprintf("%s/%s?args=%s", c.url, name, url.QueryEscape(strings.Join(args, " ")))
+	url := fmt.Sprintf("%s/%s?args=%s&wait=1", c.url, name, url.QueryEscape(strings.Join(args, " ")))
 	client := &http.Client{}
 
 	request, err := http.NewRequest("POST", url, input)

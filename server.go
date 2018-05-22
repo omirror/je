@@ -179,6 +179,10 @@ func (s *Server) CreateHandler() httprouter.Handle {
 			return
 		}
 
+		if q.Get("wait") != "" {
+			job.Wait()
+		}
+
 		u, err := url.Parse(fmt.Sprintf("./search/%d", job.ID))
 		if err != nil {
 			http.Error(w, "Internal Error", http.StatusInternalServerError)

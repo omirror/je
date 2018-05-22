@@ -12,6 +12,7 @@ type Task interface {
 	Stop() error
 	Execute() error
 	Error(err error) error
+	Wait()
 }
 
 type Pool struct {
@@ -40,7 +41,7 @@ func (p *Pool) worker() {
 			if !ok {
 				return
 			}
-			log.Debugf("executingn task: %s", task)
+			log.Debugf("executingn task: %+v", task)
 			err := task.Execute()
 			if err != nil {
 				log.Errorf("error executing task: %s", err)
@@ -78,6 +79,6 @@ func (p *Pool) Submit(task Task) error {
 	// TODO: Return an error if the task queue is full?
 	p.tasks <- task
 	task.Enqueue()
-	log.Debugf("task enqueued for execution: %s", task)
+	log.Debugf("task enqueued for execution: %+v", task)
 	return nil
 }

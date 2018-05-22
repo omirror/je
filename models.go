@@ -38,6 +38,8 @@ type Job struct {
 	StartedAt time.Time `storm:"index"`
 	StoppedAt time.Time `storm:"index"`
 	ErroredAt time.Time `storm:"index"`
+
+	done chan bool
 }
 
 func NewJob(name string, args []string, input io.Reader) (job *Job, err error) {
@@ -52,6 +54,8 @@ func NewJob(name string, args []string, input io.Reader) (job *Job, err error) {
 		Args:      args,
 		Input:     string(inputBytes),
 		CreatedAt: time.Now(),
+
+		done: make(chan bool, 1),
 	}
 	err = db.Save(job)
 	return
@@ -69,6 +73,7 @@ func (j *Job) Start() error {
 }
 
 func (j *Job) Stop() error {
+	j.done <- true
 	j.State = STATE_STOPPED
 	j.StoppedAt = time.Now()
 	return db.Save(j)
@@ -78,6 +83,10 @@ func (j *Job) Error(err error) error {
 	j.State = STATE_ERRORED
 	j.ErroredAt = time.Now()
 	return db.Save(j)
+}
+
+func (j *Job) Wait() {
+	<-j.done
 }
 
 func (j *Job) Execute() error {
