@@ -22,7 +22,10 @@ var runCmd = &cobra.Command{
 	Long: `This runs the job given by the provided name argument and waits
 for it to complete before returning and printing the result of the job and
 its output log. Arguments to the job can be provided but if those arguments
-are themselves command-line options to an execute use -- [args]`,
+are themselves command-line options to an execute use -- [args].
+
+Input can also be provided to the job by using the -i/--interactive option
+to pass stadard input to the job.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
