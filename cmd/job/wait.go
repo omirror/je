@@ -54,7 +54,7 @@ func init() {
 }
 
 func wait(client *client.Client, id string, interval, timeout time.Duration) int {
-	res, err := client.Info(id)
+	res, err := client.GetJobByID(id)
 	if err != nil {
 		log.Errorf("error retrieving information for job #%s: %s", id, err)
 		return 1
@@ -71,7 +71,7 @@ func wait(client *client.Client, id string, interval, timeout time.Duration) int
 	for {
 		select {
 		case <-t1.C:
-			res, err := client.Info(id)
+			res, err := client.GetJobByID(id)
 			if err != nil {
 				log.Errorf("error retrieving information for job #%s: %s", id, err)
 				return 1

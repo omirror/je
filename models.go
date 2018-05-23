@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	STATE_CREATED = iota
+	_ = iota
+	STATE_CREATED
 	STATE_WAITING
-	STATE_STARTED
 	STATE_RUNNING
 	STATE_STOPPED
 	STATE_ERRORED
@@ -24,6 +24,23 @@ const (
 
 // State ...
 type State int
+
+func (s State) String() string {
+	switch s {
+	case STATE_CREATED:
+		return "CREATED"
+	case STATE_WAITING:
+		return "WAITING"
+	case STATE_RUNNING:
+		return "RUNNING"
+	case STATE_STOPPED:
+		return "STOPPED"
+	case STATE_ERRORED:
+		return "ERRORED"
+	default:
+		return "???"
+	}
+}
 
 // Job ...
 type Job struct {
@@ -67,7 +84,7 @@ func (j *Job) Enqueue() error {
 }
 
 func (j *Job) Start() error {
-	j.State = STATE_STARTED
+	j.State = STATE_RUNNING
 	j.StartedAt = time.Now()
 	return db.Save(j)
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 
@@ -25,7 +26,7 @@ var infoCmd = &cobra.Command{
 
 		id := args[0]
 
-		info(client, id)
+		os.Exit(info(client, id))
 	},
 }
 
@@ -33,18 +34,20 @@ func init() {
 	RootCmd.AddCommand(infoCmd)
 }
 
-func info(client *client.Client, id string) {
-	res, err := client.Info(id)
+func info(c *client.Client, id string) int {
+	res, err := c.GetJobByID(id)
 	if err != nil {
 		log.Errorf("error retrieving information for job #%s: %s", id, err)
-		return
+		return 1
 	}
 
 	out, err := json.Marshal(res)
 	if err != nil {
 		log.Errorf("error encoding job results: %s", err)
-		return
+		return 1
 	}
 
 	fmt.Print(string(out))
+
+	return 0
 }

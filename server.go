@@ -90,10 +90,22 @@ func (s *Server) SearchHandler() httprouter.Handle {
 
 		s.counters.Inc("n_search")
 
-		id := SafeParseInt(p.ByName("id"), 0)
+		q := r.URL.Query()
 
-		if id > 0 {
+		if id := SafeParseInt(p.ByName("id"), 0); id > 0 {
 			err := db.Find("ID", id, &jobs)
+			if err != nil && err == storm.ErrNotFound {
+				http.Error(w, "Not Found", http.StatusNotFound)
+				return
+			}
+		} else if name := q.Get("name"); name != "" {
+			err := db.Find("Name", name, &jobs)
+			if err != nil && err == storm.ErrNotFound {
+				http.Error(w, "Not Found", http.StatusNotFound)
+				return
+			}
+		} else if state := SafeParseInt(q.Get("state"), 0); state != 0 {
+			err := db.Find("State", State(state), &jobs)
 			if err != nil && err == storm.ErrNotFound {
 				http.Error(w, "Not Found", http.StatusNotFound)
 				return
@@ -220,8 +232,9 @@ func (s *Server) initRoutes() {
 	s.router.GET("/debug/stats", s.StatsHandler())
 
 	s.router.POST("/:name", s.CreateHandler())
-	s.router.GET("/search/:id", s.SearchHandler())
 	s.router.GET("/logs/:id", s.LogsHandler())
+	s.router.GET("/search", s.SearchHandler())
+	s.router.GET("/search/:id", s.SearchHandler())
 }
 
 // NewServer ...

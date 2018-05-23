@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
+	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -44,53 +44,36 @@ func (c *Client) request(method, url string, body io.Reader) (res []*je.Job, err
 		return
 	}
 
-	defer response.Body.Close()
-	err = json.NewDecoder(response.Body).Decode(&res)
-	if err != nil {
-		log.Errorf("error decoding response from %s: %s", url, err)
+	if response.StatusCode == http.StatusNotFound {
+		return
+	} else if response.StatusCode == http.StatusOK {
+		defer response.Body.Close()
+		err = json.NewDecoder(response.Body).Decode(&res)
+		if err != nil {
+			log.Errorf("error decoding response from %s: %s", url, err)
+			return
+		}
+	} else {
+		err = fmt.Errorf("unexpected response %s from %s %s", response.Status, method, url)
+		log.Error(err)
 		return
 	}
 
+	// Impossible
 	return
 }
 
-// Info ...
-func (c *Client) Info(id string) (res []*je.Job, err error) {
-	url := fmt.Sprintf("%s/search/%s", c.url, id)
-
-	return c.request("GET", url, nil)
-}
-
-// Logs ...
-func (c *Client) Logs(id string) (r io.Reader, err error) {
-	url := fmt.Sprintf("%s/logs/%s", c.url, id)
-	client := &http.Client{}
-
-	request, err := http.NewRequest("GET", url, nil)
+// GetJobByID returns the matching job by id
+func (c *Client) GetJobByID(id string) (res []*je.Job, err error) {
+	i, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		log.Errorf("error constructing request to %s: %s", url, err)
+		log.Errorf("invalud id %s: %s", id, err)
 		return
 	}
 
-	response, err := client.Do(request)
-	if err != nil {
-		log.Errorf("error sending request to %s: %s", url, err)
-		return
-	}
-
-	return response.Body, nil
-}
-
-// Run ...
-func (c *Client) Run(name string, args []string, input io.Reader) (res []*je.Job, err error) {
-	url := fmt.Sprintf("%s/%s?args=%s&wait=1", c.url, name, url.QueryEscape(strings.Join(args, " ")))
-
-	return c.request("POST", url, input)
-}
-
-// Start ...
-func (c *Client) Start(name string, args []string, input io.Reader) (res []*je.Job, err error) {
-	url := fmt.Sprintf("%s/%s?args=%s", c.url, name, url.QueryEscape(strings.Join(args, " ")))
-
-	return c.request("POST", url, input)
+	return c.Search(&SearchOptions{
+		Filter: &SearchFilter{
+			ID: i,
+		},
+	})
 }

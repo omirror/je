@@ -33,12 +33,14 @@ func init() {
 	RootCmd.AddCommand(outputCmd)
 }
 
-func output(client *client.Client, id string) {
-	res, err := client.Info(id)
+func output(client *client.Client, id string) int {
+	res, err := client.GetJobByID(id)
 	if err != nil {
 		log.Errorf("error retrieving information for job #%s: %s", id, err)
-		return
+		return 1
 	}
 
 	fmt.Print(res[0].Output)
+
+	return 0
 }
