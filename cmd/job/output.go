@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 
@@ -25,7 +26,7 @@ output of the job.`,
 
 		id := args[0]
 
-		output(client, id)
+		os.Exit(output(client, id))
 	},
 }
 

@@ -35,9 +35,9 @@ to pass stadard input to the job.`,
 		client := client.NewClient(uri, nil)
 
 		if interactive {
-			start(client, args[0], args[1:], os.Stdin, quiet)
+			os.Exit(start(client, args[0], args[1:], os.Stdin, quiet))
 		} else {
-			start(client, args[0], args[1:], nil, quiet)
+			os.Exit(start(client, args[0], args[1:], nil, quiet))
 		}
 	},
 }
@@ -60,11 +60,11 @@ func init() {
 	viper.SetDefault("quiet", false)
 }
 
-func start(client *client.Client, name string, args []string, input io.Reader, quiet bool) {
+func start(client *client.Client, name string, args []string, input io.Reader, quiet bool) int {
 	res, err := client.Start(name, args, input)
 	if err != nil {
 		log.Errorf("error running job %s: %s", name, err)
-		return
+		return 1
 	}
 
 	if quiet {
@@ -73,8 +73,10 @@ func start(client *client.Client, name string, args []string, input io.Reader, q
 		out, err := json.Marshal(res)
 		if err != nil {
 			log.Errorf("error encoding job result: %s", err)
-			return
+			return 1
 		}
 		fmt.Printf(string(out))
 	}
+
+	return 0
 }

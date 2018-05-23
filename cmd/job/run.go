@@ -35,9 +35,9 @@ to pass stadard input to the job.`,
 		client := client.NewClient(uri, nil)
 
 		if interactive {
-			run(client, args[0], args[1:], os.Stdin, raw)
+			os.Exit(run(client, args[0], args[1:], os.Stdin, raw))
 		} else {
-			run(client, args[0], args[1:], nil, raw)
+			os.Exit(run(client, args[0], args[1:], nil, raw))
 		}
 	},
 }
@@ -61,11 +61,11 @@ func init() {
 
 }
 
-func run(client *client.Client, name string, args []string, input io.Reader, raw bool) {
+func run(client *client.Client, name string, args []string, input io.Reader, raw bool) int {
 	res, err := client.Run(name, args, input)
 	if err != nil {
 		log.Errorf("error running job %s: %s", name, err)
-		return
+		return 1
 	}
 
 	if raw {
@@ -74,8 +74,10 @@ func run(client *client.Client, name string, args []string, input io.Reader, raw
 		out, err := json.Marshal(res)
 		if err != nil {
 			log.Errorf("error encoding job result: %s", err)
-			return
+			return 1
 		}
 		fmt.Printf(string(out))
 	}
+
+	return 0
 }

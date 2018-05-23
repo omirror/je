@@ -25,7 +25,7 @@ var logsCmd = &cobra.Command{
 
 		id := args[0]
 
-		logs(client, id)
+		os.Exit(logs(client, id))
 	},
 }
 
@@ -33,12 +33,14 @@ func init() {
 	RootCmd.AddCommand(logsCmd)
 }
 
-func logs(client *client.Client, id string) {
+func logs(client *client.Client, id string) int {
 	r, err := client.Logs(id)
 	if err != nil {
 		log.Errorf("error retrieving logs for job %s: %s", id, err)
-		return
+		return 1
 	}
 
 	io.Copy(os.Stdout, r)
+
+	return 0
 }
