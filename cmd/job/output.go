@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"io"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -35,13 +35,13 @@ func init() {
 }
 
 func output(client *client.Client, id string) int {
-	res, err := client.GetJobByID(id)
+	r, err := client.Output(id)
 	if err != nil {
-		log.Errorf("error retrieving information for job #%s: %s", id, err)
+		log.Errorf("error retrieving logs for job %s: %s", id, err)
 		return 1
 	}
 
-	fmt.Print(res[0].Output)
+	io.Copy(os.Stdout, r)
 
 	return 0
 }

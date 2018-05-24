@@ -47,10 +47,9 @@ type Job struct {
 	ID        int      `storm:"id,increment"`
 	Name      string   `storm:"index"`
 	Args      []string `storm:"index"`
+	State     State    `storm:"index"`
+	Status    int      `storm:"index"`
 	Input     string
-	Output    string
-	State     State     `storm:"index"`
-	Status    int       `storm:"index"`
 	CreatedAt time.Time `storm:"index"`
 	StartedAt time.Time `storm:"index"`
 	StoppedAt time.Time `storm:"index"`
@@ -106,6 +105,14 @@ func (j *Job) Wait() {
 	<-j.done
 }
 
+func (j *Job) Logs() (io.ReadCloser, error) {
+	return os.Open(fmt.Sprintf("%d.log", j.ID))
+}
+
+func (j *Job) Output() (io.ReadCloser, error) {
+	return os.Open(fmt.Sprintf("%d.out", j.ID))
+}
+
 func (j *Job) Execute() error {
 	j.Start()
 	defer j.Stop()
@@ -130,25 +137,28 @@ func (j *Job) Execute() error {
 		return err
 	}
 
-	f, err := os.OpenFile(fmt.Sprintf("%d.log", j.ID), os.O_RDWR|os.O_CREATE, 0644)
+	logf, err := os.OpenFile(fmt.Sprintf("%d.log", j.ID), os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
-		log.Errorf("error creating logs for job #%s: %s", j.ID, err)
+		log.Errorf("error creating logfile for job #%s: %s", j.ID, err)
+		return err
+	}
+
+	outf, err := os.OpenFile(fmt.Sprintf("%d.out", j.ID), os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		log.Errorf("error creating output file for job #%s: %s", j.ID, err)
 		return err
 	}
 
 	// TODO: Check if written < len(res.Log)?
-	_, err = io.Copy(f, stderr)
-	if err := f.Close(); err != nil {
-		log.Errorf("error closing logs for job #%s: %s", j.ID, err)
-		return err
-	}
+	go func() {
+		defer logf.Close()
+		_, err = io.Copy(logf, stderr)
+	}()
 
-	outputBytes, err := ioutil.ReadAll(stdout)
-	if err != nil {
-		log.Errorf("error reading output from job #%d: %s", j.ID, err)
-		return err
-	}
-	j.Output = string(outputBytes)
+	go func() {
+		defer outf.Close()
+		_, err = io.Copy(outf, stdout)
+	}()
 
 	if err := cmd.Wait(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {

@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -150,15 +149,47 @@ func (s *Server) LogsHandler() httprouter.Handle {
 			return
 		}
 
-		f, err := os.Open(fmt.Sprintf("%d.log", id))
+		logs, err := job.Logs()
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
-		defer f.Close()
+		defer logs.Close()
 
 		w.Header().Set("Context-Type", "text/plaino")
-		io.Copy(w, f)
+		io.Copy(w, logs)
+	}
+}
+
+// OutputHandler ...
+func (s *Server) OutputHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		var job Job
+
+		s.counters.Inc("n_output")
+
+		id := SafeParseInt(p.ByName("id"), 0)
+
+		if id <= 0 {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		err := db.One("ID", id, &job)
+		if err != nil && err == storm.ErrNotFound {
+			http.Error(w, "Not Found", http.StatusNotFound)
+			return
+		}
+
+		output, err := job.Output()
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		defer output.Close()
+
+		w.Header().Set("Context-Type", "text/plaino")
+		io.Copy(w, output)
 	}
 }
 
@@ -233,6 +264,7 @@ func (s *Server) initRoutes() {
 
 	s.router.POST("/:name", s.CreateHandler())
 	s.router.GET("/logs/:id", s.LogsHandler())
+	s.router.GET("/output/:id", s.OutputHandler())
 	s.router.GET("/search", s.SearchHandler())
 	s.router.GET("/search/:id", s.SearchHandler())
 }
