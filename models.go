@@ -1,10 +1,8 @@
 package je
 
 import (
-	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"sync"
@@ -50,13 +48,12 @@ func (s State) String() string {
 type Job struct {
 	sync.RWMutex
 
-	ID        uint64   `storm:"id,increment"`
-	Name      string   `storm:"index"`
-	Args      []string `storm:"index"`
-	Worker    string   `storm:"index"`
-	State     State    `storm:"index"`
-	Status    int      `storm:"index"`
-	Input     string
+	ID        uint64    `storm:"id,increment"`
+	Name      string    `storm:"index"`
+	Args      []string  `storm:"index"`
+	Worker    string    `storm:"index"`
+	State     State     `storm:"index"`
+	Status    int       `storm:"index"`
 	CreatedAt time.Time `storm:"index"`
 	StartedAt time.Time `storm:"index"`
 	StoppedAt time.Time `storm:"index"`
@@ -67,17 +64,10 @@ type Job struct {
 	done chan bool
 }
 
-func NewJob(name string, args []string, input io.Reader) (job *Job, err error) {
-	inputBytes, err := ioutil.ReadAll(input)
-	if err != nil {
-		log.Errorf("error reading input for new job: %s", err)
-		return job, nil
-	}
-
+func NewJob(name string, args []string) (job *Job, err error) {
 	job = &Job{
 		Name:      name,
 		Args:      args,
-		Input:     string(inputBytes),
 		CreatedAt: time.Now(),
 
 		done: make(chan bool, 1),
@@ -135,6 +125,23 @@ func (j *Job) Wait() {
 	<-j.done
 }
 
+func (j *Job) Input() (io.Reader, error) {
+	return os.Open(fmt.Sprintf("%d.in", j.ID))
+}
+
+func (j *Job) SetInput(input io.Reader) error {
+	inf, err := os.OpenFile(fmt.Sprintf("%d.in", j.ID), os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		log.Errorf("error creating input file for job #%s: %s", j.ID, err)
+		return err
+	}
+	defer inf.Close()
+
+	io.Copy(inf, input)
+
+	return nil
+}
+
 func (j *Job) Logs() (io.ReadCloser, error) {
 	return os.Open(fmt.Sprintf("%d.log", j.ID))
 }
@@ -144,8 +151,14 @@ func (j *Job) Output() (io.ReadCloser, error) {
 }
 
 func (j *Job) Execute() error {
+	stdin, err := j.Input()
+	if err != nil {
+		log.Errorf("error reading input for job #%d: %s", j.ID, err)
+		return err
+	}
+
 	cmd := exec.Command(j.Name, j.Args...)
-	cmd.Stdin = bytes.NewBufferString(j.Input)
+	cmd.Stdin = stdin
 
 	j.Lock()
 	j.cmd = cmd

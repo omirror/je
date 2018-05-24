@@ -29,8 +29,6 @@ to pass stadard input to the job.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
-		raw := viper.GetBool("raw")
-		interactive := viper.GetBool("interactive")
 
 		client := client.NewClient(uri, nil)
 
@@ -42,22 +40,23 @@ to pass stadard input to the job.`,
 	},
 }
 
+var (
+	raw         bool
+	interactive bool
+)
+
 func init() {
 	RootCmd.AddCommand(runCmd)
 
-	runCmd.Flags().BoolP(
+	runCmd.Flags().BoolVarP(&raw,
 		"raw", "r", false,
 		"Output job response in raw form (output only)",
 	)
-	viper.BindPFlag("raw", runCmd.Flags().Lookup("raw"))
-	viper.SetDefault("raw", false)
 
-	runCmd.Flags().BoolP(
+	runCmd.Flags().BoolVarP(&interactive,
 		"interactive", "i", false,
 		"Pass stdin as input to job",
 	)
-	viper.BindPFlag("interactive", runCmd.Flags().Lookup("interactive"))
-	viper.SetDefault("interactive", false)
 }
 
 func run(client *client.Client, name string, args []string, input io.Reader, raw bool) int {

@@ -243,9 +243,16 @@ func (s *Server) CreateHandler() httprouter.Handle {
 
 		args := strings.Fields(q.Get("args"))
 
-		job, err := NewJob(name, args, r.Body)
+		job, err := NewJob(name, args)
 		if err != nil {
 			log.Errorf("error creating new job: %s", err)
+			http.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		err = job.SetInput(r.Body)
+		if err != nil {
+			log.Errorf("error setting job input for #%d: %s", job.ID, err)
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
 			return
 		}
