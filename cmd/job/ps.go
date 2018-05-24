@@ -50,11 +50,12 @@ func ps(c *client.Client) int {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 10, 4, 8, ' ', 0)
-	w.Write([]byte("ID\tNAME\tCREATED\tSTATE\n"))
+	w.Write([]byte("ID\tNAME\tARGS\tCREATED\tSTATE\tWORKER\n"))
 
 	var (
-		created string
 		d       time.Duration
+		created string
+		running string
 	)
 
 	for _, job := range res {
@@ -65,14 +66,24 @@ func ps(c *client.Client) int {
 			created = fmt.Sprintf("%s ago", d.Truncate(time.Second))
 		}
 
+		d = time.Since(job.StartedAt)
+		if (d / time.Second) < 1.0 {
+			running = "now"
+		} else {
+			running = d.Truncate(time.Second).String()
+		}
+
 		w.Write(
 			[]byte(
 				fmt.Sprintf(
-					"%d\t%s\t%s\t%s\n",
+					"%d\t%s\t%s\t%s\t%s (%s)\t%s\n",
 					job.ID,
 					job.Name,
+					client.JoinArgs(job.Args),
 					created,
 					job.State.String(),
+					running,
+					job.Worker,
 				),
 			),
 		)

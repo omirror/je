@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"sync"
 	"syscall"
 	"time"
 
@@ -19,6 +20,7 @@ const (
 	STATE_WAITING
 	STATE_RUNNING
 	STATE_STOPPED
+	STATE_KILLED
 	STATE_ERRORED
 )
 
@@ -35,6 +37,8 @@ func (s State) String() string {
 		return "RUNNING"
 	case STATE_STOPPED:
 		return "STOPPED"
+	case STATE_KILLED:
+		return "KILLED"
 	case STATE_ERRORED:
 		return "ERRORED"
 	default:
@@ -44,17 +48,22 @@ func (s State) String() string {
 
 // Job ...
 type Job struct {
-	ID        int      `storm:"id,increment"`
+	sync.RWMutex
+
+	ID        uint64   `storm:"id,increment"`
 	Name      string   `storm:"index"`
 	Args      []string `storm:"index"`
+	Worker    string   `storm:"index"`
 	State     State    `storm:"index"`
 	Status    int      `storm:"index"`
 	Input     string
 	CreatedAt time.Time `storm:"index"`
 	StartedAt time.Time `storm:"index"`
 	StoppedAt time.Time `storm:"index"`
+	KilledAt  time.Time `storm:"index"`
 	ErroredAt time.Time `storm:"index"`
 
+	cmd  *exec.Cmd
 	done chan bool
 }
 
@@ -77,15 +86,36 @@ func NewJob(name string, args []string, input io.Reader) (job *Job, err error) {
 	return
 }
 
+func (j *Job) Id() uint64 {
+	return j.ID
+}
+
 func (j *Job) Enqueue() error {
 	j.State = STATE_WAITING
 	return db.Save(j)
 }
 
-func (j *Job) Start() error {
+func (j *Job) Start(worker string) error {
+	j.Worker = worker
 	j.State = STATE_RUNNING
 	j.StartedAt = time.Now()
 	return db.Save(j)
+}
+
+func (j *Job) Kill(force bool) (err error) {
+	if force {
+		err = j.cmd.Process.Kill()
+		if err != nil {
+			log.Errorf("error killing job #%d: %s", j.ID, err)
+			return
+		}
+
+		j.done <- true
+		j.State = STATE_KILLED
+		j.KilledAt = time.Now()
+		return db.Save(j)
+	}
+	return j.cmd.Process.Signal(os.Interrupt)
 }
 
 func (j *Job) Stop() error {
@@ -114,11 +144,12 @@ func (j *Job) Output() (io.ReadCloser, error) {
 }
 
 func (j *Job) Execute() error {
-	j.Start()
-	defer j.Stop()
-
 	cmd := exec.Command(j.Name, j.Args...)
 	cmd.Stdin = bytes.NewBufferString(j.Input)
+
+	j.Lock()
+	j.cmd = cmd
+	j.Unlock()
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {

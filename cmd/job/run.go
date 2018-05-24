@@ -58,11 +58,10 @@ func init() {
 	)
 	viper.BindPFlag("interactive", runCmd.Flags().Lookup("interactive"))
 	viper.SetDefault("interactive", false)
-
 }
 
 func run(client *client.Client, name string, args []string, input io.Reader, raw bool) int {
-	res, err := client.Run(name, args, input)
+	res, err := client.Create(name, args, input, true)
 	if err != nil {
 		log.Errorf("error running job %s: %s", name, err)
 		return 1

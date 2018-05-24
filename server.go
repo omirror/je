@@ -193,6 +193,41 @@ func (s *Server) OutputHandler() httprouter.Handle {
 	}
 }
 
+// KillHandler ...
+func (s *Server) KillHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		var job Job
+
+		s.counters.Inc("n_kill")
+
+		q := r.URL.Query()
+		id := SafeParseInt(p.ByName("id"), 0)
+
+		if id <= 0 {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		err := db.One("ID", id, &job)
+		if err != nil && err == storm.ErrNotFound {
+			http.Error(w, "Not Found", http.StatusNotFound)
+			return
+		}
+
+		worker := s.pool.GetWorker(job.Worker)
+		if worker == nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		err = worker.Kill(q.Get("force") == "")
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 // CreateHandler ...
 func (s *Server) CreateHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -226,7 +261,7 @@ func (s *Server) CreateHandler() httprouter.Handle {
 			job.Wait()
 		}
 
-		u, err := url.Parse(fmt.Sprintf("./search/%d", job.ID))
+		u, err := url.Parse(fmt.Sprintf("/search/%d", job.ID))
 		if err != nil {
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
 		}
@@ -262,7 +297,8 @@ func (s *Server) initRoutes() {
 	s.router.Handler("GET", "/debug/metrics", exp.ExpHandler(s.counters.r))
 	s.router.GET("/debug/stats", s.StatsHandler())
 
-	s.router.POST("/:name", s.CreateHandler())
+	s.router.POST("/create/:name", s.CreateHandler())
+	s.router.POST("/kill/:id", s.KillHandler())
 	s.router.GET("/logs/:id", s.LogsHandler())
 	s.router.GET("/output/:id", s.OutputHandler())
 	s.router.GET("/search", s.SearchHandler())

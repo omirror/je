@@ -61,7 +61,7 @@ func init() {
 }
 
 func start(client *client.Client, name string, args []string, input io.Reader, quiet bool) int {
-	res, err := client.Start(name, args, input)
+	res, err := client.Create(name, args, input, false)
 	if err != nil {
 		log.Errorf("error running job %s: %s", name, err)
 		return 1
