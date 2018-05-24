@@ -12,7 +12,7 @@ func (c *Client) Create(name string, args []string, input io.Reader, wait bool) 
 	var url string
 
 	if wait {
-		url = fmt.Sprintf("%s/%s?args=%s&wait=1", c.url, name, JoinArgs(args))
+		url = fmt.Sprintf("%s/create/%s?args=%s&wait=1", c.url, name, JoinArgs(args))
 	} else {
 		url = fmt.Sprintf("%s/create/%s?args=%s", c.url, name, JoinArgs(args))
 	}
