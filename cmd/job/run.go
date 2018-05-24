@@ -68,15 +68,15 @@ func run(client *client.Client, name string, args []string, input io.Reader, raw
 	}
 
 	if raw {
-		fmt.Print(res[0].Output)
-	} else {
-		out, err := json.Marshal(res)
-		if err != nil {
-			log.Errorf("error encoding job result: %s", err)
-			return 1
-		}
-		fmt.Printf(string(out))
+		return output(client, fmt.Sprintf("%d", res[0].ID))
 	}
+
+	out, err := json.Marshal(res)
+	if err != nil {
+		log.Errorf("error encoding job result: %s", err)
+		return 1
+	}
+	fmt.Printf(string(out))
 
 	return 0
 }
