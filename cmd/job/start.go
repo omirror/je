@@ -30,11 +30,11 @@ to pass stadard input to the job.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
 		quiet := viper.GetBool("quiet")
-		interactive := viper.GetBool("interactive")
 
 		client := client.NewClient(uri, nil)
 
-		if interactive {
+		stat, _ := os.Stdin.Stat()
+		if (stat.Mode() & os.ModeCharDevice) == 0 {
 			os.Exit(start(client, args[0], args[1:], os.Stdin, quiet))
 		} else {
 			os.Exit(start(client, args[0], args[1:], nil, quiet))
@@ -44,13 +44,6 @@ to pass stadard input to the job.`,
 
 func init() {
 	RootCmd.AddCommand(startCmd)
-
-	startCmd.Flags().BoolP(
-		"interactive", "i", false,
-		"Pass stdin as input to job",
-	)
-	viper.BindPFlag("interactive", startCmd.Flags().Lookup("interactive"))
-	viper.SetDefault("interactive", false)
 
 	startCmd.Flags().BoolP(
 		"quiet", "q", false,

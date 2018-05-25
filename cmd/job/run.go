@@ -32,7 +32,8 @@ to pass stadard input to the job.`,
 
 		client := client.NewClient(uri, nil)
 
-		if interactive {
+		stat, _ := os.Stdin.Stat()
+		if (stat.Mode() & os.ModeCharDevice) == 0 {
 			os.Exit(run(client, args[0], args[1:], os.Stdin, raw))
 		} else {
 			os.Exit(run(client, args[0], args[1:], nil, raw))
@@ -41,8 +42,7 @@ to pass stadard input to the job.`,
 }
 
 var (
-	raw         bool
-	interactive bool
+	raw bool
 )
 
 func init() {
@@ -51,11 +51,6 @@ func init() {
 	runCmd.Flags().BoolVarP(&raw,
 		"raw", "r", false,
 		"Output job response in raw form (output only)",
-	)
-
-	runCmd.Flags().BoolVarP(&interactive,
-		"interactive", "i", false,
-		"Pass stdin as input to job",
 	)
 }
 
