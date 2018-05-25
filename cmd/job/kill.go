@@ -22,10 +22,15 @@ instead forcing the job to terminate uncleanly.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
-		force := viper.GetBool("force")
 		client := client.NewClient(uri, nil)
 
 		id := args[0]
+
+		force, err := cmd.Flags().GetBool("force")
+		if err != nil {
+			log.Errorf("error getting -f/--force flag: %s", err)
+			os.Exit(1)
+		}
 
 		os.Exit(kill(client, id, force))
 	},
@@ -38,8 +43,6 @@ func init() {
 		"force", "f", false,
 		"Force kill job by sending SIGKILL",
 	)
-	viper.BindPFlag("force", killCmd.Flags().Lookup("force"))
-	viper.SetDefault("force", false)
 }
 
 func kill(c *client.Client, id string, force bool) int {

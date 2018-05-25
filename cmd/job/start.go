@@ -29,9 +29,13 @@ to pass stadard input to the job.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
-		quiet := viper.GetBool("quiet")
-
 		client := client.NewClient(uri, nil)
+
+		quiet, err := cmd.Flags().GetBool("quiet")
+		if err != nil {
+			log.Errorf("error getting -q/--quiet flag: %s", err)
+			os.Exit(1)
+		}
 
 		stat, _ := os.Stdin.Stat()
 		if (stat.Mode() & os.ModeCharDevice) == 0 {
@@ -49,8 +53,6 @@ func init() {
 		"quiet", "q", false,
 		"Only display numeric IDs",
 	)
-	viper.BindPFlag("quiet", startCmd.Flags().Lookup("quiet"))
-	viper.SetDefault("quiet", false)
 }
 
 func start(client *client.Client, name string, args []string, input io.Reader, quiet bool) int {

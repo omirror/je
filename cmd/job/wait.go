@@ -24,10 +24,19 @@ displaying the job's exit status`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
-		interval := viper.GetDuration("interval")
-		timeout := viper.GetDuration("timeout")
-
 		client := client.NewClient(uri, nil)
+
+		interval, err := cmd.Flags().GetDuration("interval")
+		if err != nil {
+			log.Errorf("error getting -i/--interval flag: %s", err)
+			os.Exit(1)
+		}
+
+		timeout, err := cmd.Flags().GetDuration("timeout")
+		if err != nil {
+			log.Errorf("error getting -t/--timeout flag: %s", err)
+			os.Exit(1)
+		}
 
 		id := args[0]
 
@@ -42,15 +51,11 @@ func init() {
 		"interval", "i", 5*time.Second,
 		"Poll interval duration",
 	)
-	viper.BindPFlag("interval", waitCmd.Flags().Lookup("interval"))
-	viper.SetDefault("interval", 5*time.Second)
 
 	waitCmd.Flags().DurationP(
 		"timeout", "t", 30*time.Second,
 		"Timeout after specified duration",
 	)
-	viper.BindPFlag("timeout", waitCmd.Flags().Lookup("timeout"))
-	viper.SetDefault("timeout", 30*time.Second)
 }
 
 func wait(client *client.Client, id string, interval, timeout time.Duration) int {

@@ -29,8 +29,13 @@ to pass stadard input to the job.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
-
 		client := client.NewClient(uri, nil)
+
+		raw, err := cmd.Flags().GetBool("raw")
+		if err != nil {
+			log.Errorf("error getting -r/--raw flag: %s", err)
+			os.Exit(1)
+		}
 
 		stat, _ := os.Stdin.Stat()
 		if (stat.Mode() & os.ModeCharDevice) == 0 {
@@ -41,14 +46,10 @@ to pass stadard input to the job.`,
 	},
 }
 
-var (
-	raw bool
-)
-
 func init() {
 	RootCmd.AddCommand(runCmd)
 
-	runCmd.Flags().BoolVarP(&raw,
+	runCmd.Flags().BoolP(
 		"raw", "r", false,
 		"Output job response in raw form (output only)",
 	)

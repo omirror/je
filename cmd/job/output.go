@@ -26,18 +26,20 @@ output of the job.`,
 
 		id := args[0]
 
+		follow, err := cmd.Flags().GetBool("follow")
+		if err != nil {
+			log.Errorf("error getting -f/--follow flag: %s", err)
+			os.Exit(1)
+		}
+
 		os.Exit(output(client, id, follow))
 	},
 }
 
-var (
-	follow bool
-)
-
 func init() {
 	RootCmd.AddCommand(outputCmd)
 
-	outputCmd.Flags().BoolVarP(&follow,
+	outputCmd.Flags().BoolP(
 		"follow", "f", false,
 		"Follow log output as it is written to",
 	)
