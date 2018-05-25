@@ -26,16 +26,25 @@ output of the job.`,
 
 		id := args[0]
 
-		os.Exit(output(client, id))
+		os.Exit(output(client, id, follow))
 	},
 }
 
+var (
+	follow bool
+)
+
 func init() {
 	RootCmd.AddCommand(outputCmd)
+
+	outputCmd.Flags().BoolVarP(&follow,
+		"follow", "f", false,
+		"Follow log output as it is written to",
+	)
 }
 
-func output(client *client.Client, id string) int {
-	r, err := client.Output(id)
+func output(client *client.Client, id string, follow bool) int {
+	r, err := client.Output(id, follow)
 	if err != nil {
 		log.Errorf("error retrieving logs for job %s: %s", id, err)
 		return 1

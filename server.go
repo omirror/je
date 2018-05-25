@@ -1,6 +1,7 @@
 package je
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -168,6 +169,7 @@ func (s *Server) OutputHandler() httprouter.Handle {
 
 		s.counters.Inc("n_output")
 
+		q := r.URL.Query()
 		id := SafeParseInt(p.ByName("id"), 0)
 
 		if id <= 0 {
@@ -181,15 +183,43 @@ func (s *Server) OutputHandler() httprouter.Handle {
 			return
 		}
 
-		output, err := job.Output()
-		if err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-		defer output.Close()
+		if q.Get("follow") == "" {
+			output, err := job.Output()
+			if err != nil {
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+			defer output.Close()
 
-		w.Header().Set("Context-Type", "text/plaino")
-		io.Copy(w, output)
+			w.Header().Set("Context-Type", "text/plaino")
+			io.Copy(w, output)
+		} else {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			lines, errors := job.OutputTail(ctx)
+			for {
+				select {
+				case line := <-lines:
+					message := []byte(fmt.Sprintf("%s\n", line))
+					// TODO: What if n < len(message)?
+					_, err = w.Write(message)
+					// TODO: Resend?
+					if err != nil {
+						log.Errorf("error streaming output for job #%d: %s", job.ID, err)
+						return
+					}
+
+					if f, ok := w.(http.Flusher); ok {
+						f.Flush()
+					} else {
+						log.Warn("no flusher")
+					}
+				case err := <-errors:
+					log.Errorf("error reading output for job #%d: %s", job.ID, err)
+					return
+				}
+			}
+		}
 	}
 }
 
@@ -290,14 +320,12 @@ func (s *Server) StatsHandler() httprouter.Handle {
 
 // ListenAndServe ...
 func (s *Server) ListenAndServe() {
-	log.Fatal(
-		http.ListenAndServe(
-			s.bind,
-			s.logger.Handler(
-				s.stats.Handler(s.router),
-			),
+	log.Fatal(http.ListenAndServe(
+		s.bind,
+		s.logger.Handler(
+			s.stats.Handler(s.router),
 		),
-	)
+	))
 }
 
 func (s *Server) initRoutes() {

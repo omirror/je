@@ -67,7 +67,7 @@ func run(client *client.Client, name string, args []string, input io.Reader, raw
 	}
 
 	if raw {
-		return output(client, fmt.Sprintf("%d", res[0].ID))
+		return output(client, fmt.Sprintf("%d", res[0].ID), false)
 	}
 
 	out, err := json.Marshal(res)

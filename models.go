@@ -1,6 +1,7 @@
 package je
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +11,8 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+
+	"github.com/hpcloud/tail"
 )
 
 const (
@@ -148,6 +151,37 @@ func (j *Job) Logs() (io.ReadCloser, error) {
 
 func (j *Job) Output() (io.ReadCloser, error) {
 	return os.Open(fmt.Sprintf("%d.out", j.ID))
+}
+
+func (j *Job) OutputTail(ctx context.Context) (lines chan string, errors chan error) {
+	lines = make(chan string)
+	errors = make(chan error)
+
+	t, err := tail.TailFile(
+		fmt.Sprintf("%d.out", j.ID),
+		tail.Config{Follow: true},
+	)
+	if err != nil {
+		log.Errorf("error tailing output for job #%d: %s", err)
+		errors <- err
+		return
+	}
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case line := <-t.Lines:
+				if line.Err != nil {
+					errors <- line.Err
+				} else {
+					lines <- line.Text
+				}
+			}
+		}
+	}()
+	return
 }
 
 func (j *Job) Execute() error {
