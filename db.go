@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/asdine/storm"
+	"github.com/asdine/storm/codec/msgpack"
 )
 
 var (
@@ -12,7 +13,8 @@ var (
 
 func InitDB(path string) *storm.DB {
 	var err error
-	db, err = storm.Open(path)
+
+	db, err = storm.Open(path, storm.Codec(msgpack.Codec), storm.Batch())
 	if err != nil {
 		log.Fatal(err)
 	}
