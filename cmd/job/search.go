@@ -44,7 +44,7 @@ If no jobs are found matching the criteria, an empy list is returned.`,
 			os.Exit(1)
 		}
 
-		os.Exit(search(client, id, name, arg, state))
+		os.Exit(search(client, id, name, state))
 	},
 }
 
@@ -62,12 +62,11 @@ func init() {
 	)
 }
 
-func search(c *client.Client, id, name, arg, state string) int {
+func search(c *client.Client, id, name, state string) int {
 	res, err := c.Search(&client.SearchOptions{
 		Filter: &client.SearchFilter{
 			ID:    id,
 			Name:  name,
-			Arg:   arg,
 			State: state,
 		},
 	})
