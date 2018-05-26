@@ -41,7 +41,7 @@ func init() {
 
 	outputCmd.Flags().BoolP(
 		"follow", "f", false,
-		"Follow log output as it is written to",
+		"Follow output as it is written to",
 	)
 }
 

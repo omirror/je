@@ -25,16 +25,28 @@ var logsCmd = &cobra.Command{
 
 		id := args[0]
 
-		os.Exit(logs(client, id))
+		follow, err := cmd.Flags().GetBool("follow")
+		if err != nil {
+			log.Errorf("error getting -f/--follow flag: %s", err)
+			os.Exit(1)
+		}
+
+		os.Exit(logs(client, id, follow))
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(logsCmd)
+
+	logsCmd.Flags().BoolP(
+		"follow", "f", false,
+		"Follow logs as it is written to",
+	)
+
 }
 
-func logs(client *client.Client, id string) int {
-	r, err := client.Logs(id)
+func logs(client *client.Client, id string, follow bool) int {
+	r, err := client.Logs(id, follow)
 	if err != nil {
 		log.Errorf("error retrieving logs for job %s: %s", id, err)
 		return 1

@@ -1,6 +1,6 @@
 # TODO
 
-- [ ] `job logs -f ...` -- Follow logs
+- [X] `job logs -f ...` -- Follow logs
 - [X] `job kill ...` -- Kill job
 - [X] `job ps ...` -- List all running jobs
 - [ ] `job search ...` -- Search jobs

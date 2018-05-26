@@ -72,6 +72,7 @@ func (s *Server) LogsHandler() httprouter.Handle {
 
 		s.counters.Inc("n_logs")
 
+		q := r.URL.Query()
 		id := SafeParseInt(p.ByName("id"), 0)
 
 		if id <= 0 {
@@ -85,15 +86,43 @@ func (s *Server) LogsHandler() httprouter.Handle {
 			return
 		}
 
-		logs, err := job.Logs()
-		if err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-		defer logs.Close()
+		if q.Get("follow") == "" {
+			logs, err := job.Logs()
+			if err != nil {
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+			defer logs.Close()
 
-		w.Header().Set("Context-Type", "text/plaino")
-		io.Copy(w, logs)
+			w.Header().Set("Context-Type", "text/plaino")
+			io.Copy(w, logs)
+		} else {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			lines, errors := job.LogsTail(ctx)
+			for {
+				select {
+				case line := <-lines:
+					message := []byte(fmt.Sprintf("%s\n", line))
+					// TODO: What if n < len(message)?
+					_, err = w.Write(message)
+					// TODO: Resend?
+					if err != nil {
+						log.Errorf("error streaming output for job #%d: %s", job.ID, err)
+						return
+					}
+
+					if f, ok := w.(http.Flusher); ok {
+						f.Flush()
+					} else {
+						log.Warn("no flusher")
+					}
+				case err := <-errors:
+					log.Errorf("error reading output for job #%d: %s", job.ID, err)
+					return
+				}
+			}
+		}
 	}
 }
 

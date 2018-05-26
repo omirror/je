@@ -9,8 +9,15 @@ import (
 )
 
 // Logs ...
-func (c *Client) Logs(id string) (r io.Reader, err error) {
-	url := fmt.Sprintf("%s/logs/%s", c.url, id)
+func (c *Client) Logs(id string, follow bool) (r io.Reader, err error) {
+	var url string
+
+	if follow {
+		url = fmt.Sprintf("%s/logs/%s?follow=1", c.url, id)
+	} else {
+		url = fmt.Sprintf("%s/logs/%s", c.url, id)
+	}
+
 	client := &http.Client{}
 
 	request, err := http.NewRequest("GET", url, nil)

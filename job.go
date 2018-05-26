@@ -117,6 +117,37 @@ func (j *Job) Logs() (io.ReadCloser, error) {
 	return os.Open(fmt.Sprintf("%d.log", j.ID))
 }
 
+func (j *Job) LogsTail(ctx context.Context) (lines chan string, errors chan error) {
+	lines = make(chan string)
+	errors = make(chan error)
+
+	t, err := tail.TailFile(
+		fmt.Sprintf("%d.log", j.ID),
+		tail.Config{Follow: true},
+	)
+	if err != nil {
+		log.Errorf("error tailing output for job #%d: %s", err)
+		errors <- err
+		return
+	}
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case line := <-t.Lines:
+				if line.Err != nil {
+					errors <- line.Err
+				} else {
+					lines <- line.Text
+				}
+			}
+		}
+	}()
+	return
+}
+
 func (j *Job) Output() (io.ReadCloser, error) {
 	return os.Open(fmt.Sprintf("%d.out", j.ID))
 }
