@@ -3,16 +3,14 @@ package client
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
-
 	"git.mills.io/prologic/je"
 )
 
 // SearchFilter ...
 type SearchFilter struct {
-	ID    uint64
+	ID    string
 	Name  string
-	State int
+	State string
 }
 
 // SearchOptions ...
@@ -27,16 +25,12 @@ func (c *Client) Search(options *SearchOptions) (res []*je.Job, err error) {
 	filter := options.Filter
 
 	switch {
-	case filter.ID != 0:
-		url += fmt.Sprintf("/%d", filter.ID)
+	case filter.ID != "":
+		url += fmt.Sprintf("/%s", filter.ID)
 	case filter.Name != "":
 		url += fmt.Sprintf("?name=%s", filter.Name)
-	case filter.State != 0:
-		url += fmt.Sprintf("?state=%d", filter.State)
-	default:
-		err = fmt.Errorf("unsupported search filter: %+v", filter)
-		log.Error(err)
-		return
+	case filter.State != "":
+		url += fmt.Sprintf("?state=%s", filter.State)
 	}
 
 	return c.request("GET", url, nil)

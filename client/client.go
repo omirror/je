@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -65,15 +64,9 @@ func (c *Client) request(method, url string, body io.Reader) (res []*je.Job, err
 
 // GetJobByID returns the matching job by id
 func (c *Client) GetJobByID(id string) (res []*je.Job, err error) {
-	i, err := strconv.ParseUint(id, 10, 64)
-	if err != nil {
-		log.Errorf("invalud id %s: %s", id, err)
-		return
-	}
-
 	return c.Search(&SearchOptions{
 		Filter: &SearchFilter{
-			ID: i,
+			ID: id,
 		},
 	})
 }

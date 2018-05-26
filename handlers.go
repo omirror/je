@@ -13,6 +13,7 @@ import (
 
 	// Database
 	"github.com/asdine/storm"
+	"github.com/asdine/storm/q"
 
 	// Routing
 	"github.com/julienschmidt/httprouter"
@@ -25,7 +26,7 @@ func (s *Server) SearchHandler() httprouter.Handle {
 
 		s.counters.Inc("n_search")
 
-		q := r.URL.Query()
+		qs := r.URL.Query()
 
 		if id := SafeParseInt(p.ByName("id"), 0); id > 0 {
 			err := db.Find("ID", id, &jobs)
@@ -33,14 +34,14 @@ func (s *Server) SearchHandler() httprouter.Handle {
 				http.Error(w, "Not Found", http.StatusNotFound)
 				return
 			}
-		} else if name := q.Get("name"); name != "" {
-			err := db.Find("Name", name, &jobs)
+		} else if name := qs.Get("name"); name != "" {
+			err := db.Select(q.Re("Name", name)).Find(&jobs)
 			if err != nil && err == storm.ErrNotFound {
 				http.Error(w, "Not Found", http.StatusNotFound)
 				return
 			}
-		} else if state := SafeParseInt(q.Get("state"), 0); state != 0 {
-			err := db.Find("State", State(state), &jobs)
+		} else if state := ParseState(qs.Get("state")); state != State(0) {
+			err := db.Find("State", state, &jobs)
 			if err != nil && err == storm.ErrNotFound {
 				http.Error(w, "Not Found", http.StatusNotFound)
 				return
@@ -72,7 +73,7 @@ func (s *Server) LogsHandler() httprouter.Handle {
 
 		s.counters.Inc("n_logs")
 
-		q := r.URL.Query()
+		qs := r.URL.Query()
 		id := SafeParseInt(p.ByName("id"), 0)
 
 		if id <= 0 {
@@ -86,7 +87,7 @@ func (s *Server) LogsHandler() httprouter.Handle {
 			return
 		}
 
-		if q.Get("follow") == "" {
+		if qs.Get("follow") == "" {
 			logs, err := job.Logs()
 			if err != nil {
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -133,7 +134,7 @@ func (s *Server) OutputHandler() httprouter.Handle {
 
 		s.counters.Inc("n_output")
 
-		q := r.URL.Query()
+		qs := r.URL.Query()
 		id := SafeParseInt(p.ByName("id"), 0)
 
 		if id <= 0 {
@@ -147,7 +148,7 @@ func (s *Server) OutputHandler() httprouter.Handle {
 			return
 		}
 
-		if q.Get("follow") == "" {
+		if qs.Get("follow") == "" {
 			output, err := job.Output()
 			if err != nil {
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -194,7 +195,7 @@ func (s *Server) KillHandler() httprouter.Handle {
 
 		s.counters.Inc("n_kill")
 
-		q := r.URL.Query()
+		qs := r.URL.Query()
 		id := SafeParseInt(p.ByName("id"), 0)
 
 		if id <= 0 {
@@ -214,7 +215,7 @@ func (s *Server) KillHandler() httprouter.Handle {
 			return
 		}
 
-		err = worker.Kill(q.Get("force") == "")
+		err = worker.Kill(qs.Get("force") == "")
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
@@ -227,7 +228,7 @@ func (s *Server) CreateHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		s.counters.Inc("n_create")
 
-		q := r.URL.Query()
+		qs := r.URL.Query()
 
 		name := p.ByName("name")
 		if name == "" {
@@ -235,7 +236,7 @@ func (s *Server) CreateHandler() httprouter.Handle {
 			return
 		}
 
-		args := strings.Fields(q.Get("args"))
+		args := strings.Fields(qs.Get("args"))
 
 		job, err := NewJob(name, args)
 		if err != nil {
@@ -258,7 +259,7 @@ func (s *Server) CreateHandler() httprouter.Handle {
 			return
 		}
 
-		if q.Get("wait") != "" {
+		if qs.Get("wait") != "" {
 			job.Wait()
 		}
 
