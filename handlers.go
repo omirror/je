@@ -24,8 +24,6 @@ func (s *Server) SearchHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		var jobs []*Job
 
-		s.counters.Inc("n_search")
-
 		qs := r.URL.Query()
 
 		if id := SafeParseInt(p.ByName("id"), 0); id > 0 {
@@ -70,8 +68,6 @@ func (s *Server) SearchHandler() httprouter.Handle {
 func (s *Server) LogsHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		var job Job
-
-		s.counters.Inc("n_logs")
 
 		qs := r.URL.Query()
 		id := SafeParseInt(p.ByName("id"), 0)
@@ -132,8 +128,6 @@ func (s *Server) OutputHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		var job Job
 
-		s.counters.Inc("n_output")
-
 		qs := r.URL.Query()
 		id := SafeParseInt(p.ByName("id"), 0)
 
@@ -193,8 +187,6 @@ func (s *Server) KillHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		var job Job
 
-		s.counters.Inc("n_kill")
-
 		qs := r.URL.Query()
 		id := SafeParseInt(p.ByName("id"), 0)
 
@@ -226,8 +218,6 @@ func (s *Server) KillHandler() httprouter.Handle {
 // CreateHandler ...
 func (s *Server) CreateHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		s.counters.Inc("n_create")
-
 		qs := r.URL.Query()
 
 		name := p.ByName("name")
@@ -268,17 +258,5 @@ func (s *Server) CreateHandler() httprouter.Handle {
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
 		}
 		http.Redirect(w, r, r.URL.ResolveReference(u).String(), http.StatusFound)
-	}
-}
-
-// StatsHandler ...
-func (s *Server) StatsHandler() httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		bs, err := json.Marshal(s.stats.Data())
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		w.Write(bs)
 	}
 }

@@ -8,10 +8,6 @@ import (
 	// Logging
 	"github.com/unrolled/logger"
 
-	// Stats/Metrics
-	"github.com/rcrowley/go-metrics/exp"
-	"github.com/thoas/stats"
-
 	// Routing
 	"github.com/julienschmidt/httprouter"
 
@@ -39,26 +35,17 @@ type Server struct {
 
 	// Logger
 	logger *logger.Logger
-
-	// Stats/Metrics
-	counters *Counters
-	stats    *stats.Stats
 }
 
 // ListenAndServe ...
 func (s *Server) ListenAndServe() {
 	log.Fatal(http.ListenAndServe(
 		s.bind,
-		s.logger.Handler(
-			s.stats.Handler(s.router),
-		),
+		s.logger.Handler(s.router),
 	))
 }
 
 func (s *Server) initRoutes() {
-	s.router.Handler("GET", "/debug/metrics", exp.ExpHandler(s.counters.r))
-	s.router.GET("/debug/stats", s.StatsHandler())
-
 	s.router.POST("/create/:name", s.CreateHandler())
 	s.router.POST("/kill/:id", s.KillHandler())
 	s.router.GET("/logs/:id", s.LogsHandler())
@@ -93,10 +80,6 @@ func NewServer(bind string, options *Options) *Server {
 			Prefix:               "je",
 			RemoteAddressHeaders: []string{"X-Forwarded-For"},
 		}),
-
-		// Stats/Metrics
-		counters: NewCounters(),
-		stats:    stats.New(),
 	}
 
 	server.initRoutes()
