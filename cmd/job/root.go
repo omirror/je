@@ -22,7 +22,9 @@ var RootCmd = &cobra.Command{
 	Short:   "Command-line client for je",
 	Long: `This is the command-line client for the job execution daemon je.
 
-This lets you run jobs asynchronously, inspect job statuses nad logs.
+This lets you run jobs asynchronously and synchronously, inspect job status,
+output and logs and control their state.
+
 This is the reference implementation of using the je client library for
 running and accessing jobs`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
