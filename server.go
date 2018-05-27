@@ -50,6 +50,7 @@ func (s *Server) initRoutes() {
 	s.router.POST("/kill/:id", s.KillHandler())
 	s.router.GET("/logs/:id", s.LogsHandler())
 	s.router.GET("/output/:id", s.OutputHandler())
+	s.router.POST("/write/:id", s.WriteHandler())
 	s.router.GET("/search", s.SearchHandler())
 	s.router.GET("/search/:id", s.SearchHandler())
 }

@@ -59,7 +59,7 @@ func (s *Server) SearchHandler() httprouter.Handle {
 			return
 		}
 
-		w.Header().Set("Content-Type", "text/json")
+		w.Header().Set("Content-Type", "application/json")
 		w.Write(out)
 	}
 }
@@ -91,7 +91,7 @@ func (s *Server) LogsHandler() httprouter.Handle {
 			}
 			defer logs.Close()
 
-			w.Header().Set("Context-Type", "text/plaino")
+			w.Header().Set("Content-Type", "text/plain")
 			io.Copy(w, logs)
 		} else {
 			ctx, cancel := context.WithCancel(context.Background())
@@ -150,7 +150,7 @@ func (s *Server) OutputHandler() httprouter.Handle {
 			}
 			defer output.Close()
 
-			w.Header().Set("Context-Type", "text/plaino")
+			w.Header().Set("Content-Type", "text/plain")
 			io.Copy(w, output)
 		} else {
 			ctx, cancel := context.WithCancel(context.Background())
@@ -227,8 +227,9 @@ func (s *Server) CreateHandler() httprouter.Handle {
 		}
 
 		args := strings.Fields(qs.Get("args"))
+		interactive := SafeParseInt(qs.Get("interactive"), 0) == 1
 
-		job, err := NewJob(name, args)
+		job, err := NewJob(name, args, interactive)
 		if err != nil {
 			log.Errorf("error creating new job: %s", err)
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
@@ -258,5 +259,38 @@ func (s *Server) CreateHandler() httprouter.Handle {
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
 		}
 		http.Redirect(w, r, r.URL.ResolveReference(u).String(), http.StatusFound)
+	}
+}
+
+// WriteHandler ...
+func (s *Server) WriteHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		var job Job
+
+		id := SafeParseInt(p.ByName("id"), 0)
+
+		if id <= 0 {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		err := db.One("ID", id, &job)
+		if err != nil && err == storm.ErrNotFound {
+			http.Error(w, "Not Found", http.StatusNotFound)
+			return
+		}
+
+		worker := s.pool.GetWorker(job.Worker)
+		if worker == nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		// TODO: WHat if n < len(r.Body)?
+		_, err = worker.Write(r.Body)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 	}
 }

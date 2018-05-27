@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"io"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
@@ -14,6 +15,7 @@ type Task interface {
 	Start(worker string) error
 	Stop() error
 	Kill(force bool) error
+	Write(input io.Reader) (int64, error)
 	Execute() error
 	Error(err error) error
 	Wait()
@@ -101,6 +103,13 @@ func (w *Worker) Kill(force bool) error {
 	defer w.RUnlock()
 
 	return w.task.Kill(force)
+}
+
+func (w *Worker) Write(input io.Reader) (int64, error) {
+	w.RLock()
+	defer w.RUnlock()
+
+	return w.task.Write(input)
 }
 
 func (w *Worker) Run(tasks chan Task, kill chan struct{}, wg sync.WaitGroup) {

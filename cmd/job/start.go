@@ -31,6 +31,12 @@ to pass stadard input to the job.`,
 		uri := viper.GetString("uri")
 		client := client.NewClient(uri, nil)
 
+		interactive, err := cmd.Flags().GetBool("interactive")
+		if err != nil {
+			log.Errorf("error getting -i/--interactive flag: %s", err)
+			os.Exit(1)
+		}
+
 		quiet, err := cmd.Flags().GetBool("quiet")
 		if err != nil {
 			log.Errorf("error getting -q/--quiet flag: %s", err)
@@ -39,9 +45,9 @@ to pass stadard input to the job.`,
 
 		stat, _ := os.Stdin.Stat()
 		if (stat.Mode() & os.ModeCharDevice) == 0 {
-			os.Exit(start(client, args[0], args[1:], os.Stdin, quiet))
+			os.Exit(start(client, args[0], args[1:], os.Stdin, interactive, quiet))
 		} else {
-			os.Exit(start(client, args[0], args[1:], nil, quiet))
+			os.Exit(start(client, args[0], args[1:], nil, interactive, quiet))
 		}
 	},
 }
@@ -50,13 +56,18 @@ func init() {
 	RootCmd.AddCommand(startCmd)
 
 	startCmd.Flags().BoolP(
+		"interactive", "i", false,
+		"Keep stdin open",
+	)
+
+	startCmd.Flags().BoolP(
 		"quiet", "q", false,
 		"Only display numeric IDs",
 	)
 }
 
-func start(client *client.Client, name string, args []string, input io.Reader, quiet bool) int {
-	res, err := client.Create(name, args, input, false)
+func start(client *client.Client, name string, args []string, input io.Reader, interactive, quiet bool) int {
+	res, err := client.Create(name, args, input, interactive, false)
 	if err != nil {
 		log.Errorf("error running job %s: %s", name, err)
 		return 1

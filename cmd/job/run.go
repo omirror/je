@@ -37,11 +37,17 @@ to pass stadard input to the job.`,
 			os.Exit(1)
 		}
 
+		interactive, err := cmd.Flags().GetBool("interactive")
+		if err != nil {
+			log.Errorf("error getting -i/--interactive flag: %s", err)
+			os.Exit(1)
+		}
+
 		stat, _ := os.Stdin.Stat()
 		if (stat.Mode() & os.ModeCharDevice) == 0 {
-			os.Exit(run(client, args[0], args[1:], os.Stdin, raw))
+			os.Exit(run(client, args[0], args[1:], os.Stdin, interactive, raw))
 		} else {
-			os.Exit(run(client, args[0], args[1:], nil, raw))
+			os.Exit(run(client, args[0], args[1:], nil, interactive, raw))
 		}
 	},
 }
@@ -50,13 +56,18 @@ func init() {
 	RootCmd.AddCommand(runCmd)
 
 	runCmd.Flags().BoolP(
+		"interactive", "i", false,
+		"Keep stdin open",
+	)
+
+	runCmd.Flags().BoolP(
 		"raw", "r", false,
 		"Output job response in raw form (output only)",
 	)
 }
 
-func run(client *client.Client, name string, args []string, input io.Reader, raw bool) int {
-	res, err := client.Create(name, args, input, true)
+func run(client *client.Client, name string, args []string, input io.Reader, interactive, raw bool) int {
+	res, err := client.Create(name, args, input, interactive, true)
 	if err != nil {
 		log.Errorf("error running job %s: %s", name, err)
 		return 1

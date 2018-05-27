@@ -19,27 +19,30 @@ import (
 type Job struct {
 	sync.RWMutex
 
-	ID        uint64    `storm:"id,increment"`
-	Name      string    `storm:"index"`
-	Args      []string  `storm:"index"`
-	Worker    string    `storm:"index"`
-	State     State     `storm:"index"`
-	Status    int       `storm:"index"`
-	CreatedAt time.Time `storm:"index"`
-	StartedAt time.Time `storm:"index"`
-	StoppedAt time.Time `storm:"index"`
-	KilledAt  time.Time `storm:"index"`
-	ErroredAt time.Time `storm:"index"`
+	ID          uint64    `storm:"id,increment"`
+	Name        string    `storm:"index"`
+	Args        []string  `storm:"index"`
+	Interactive bool      `storm:"index"`
+	Worker      string    `storm:"index"`
+	State       State     `storm:"index"`
+	Status      int       `storm:"index"`
+	CreatedAt   time.Time `storm:"index"`
+	StartedAt   time.Time `storm:"index"`
+	StoppedAt   time.Time `storm:"index"`
+	KilledAt    time.Time `storm:"index"`
+	ErroredAt   time.Time `storm:"index"`
 
-	cmd  *exec.Cmd
-	done chan bool
+	input io.WriteCloser
+	cmd   *exec.Cmd
+	done  chan bool
 }
 
-func NewJob(name string, args []string) (job *Job, err error) {
+func NewJob(name string, args []string, interactive bool) (job *Job, err error) {
 	job = &Job{
-		Name:      name,
-		Args:      args,
-		CreatedAt: time.Now(),
+		Name:        name,
+		Args:        args,
+		Interactive: interactive,
+		CreatedAt:   time.Now(),
 
 		done: make(chan bool, 1),
 	}
@@ -113,6 +116,14 @@ func (j *Job) SetInput(input io.Reader) error {
 	return nil
 }
 
+func (j *Job) Write(input io.Reader) (int64, error) {
+	if !j.Interactive {
+		return 0, fmt.Errorf("cannot write to a non-interactive job")
+	}
+
+	return io.Copy(j.input, input)
+}
+
 func (j *Job) Logs() (io.ReadCloser, error) {
 	return os.Open(fmt.Sprintf("%d.log", j.ID))
 }
@@ -184,14 +195,25 @@ func (j *Job) OutputTail(ctx context.Context) (lines chan string, errors chan er
 }
 
 func (j *Job) Execute() error {
-	stdin, err := j.Input()
-	if err != nil {
-		log.Errorf("error reading input for job #%d: %s", j.ID, err)
-		return err
-	}
-
 	cmd := exec.Command(j.Name, j.Args...)
-	cmd.Stdin = stdin
+
+	if j.Interactive {
+		stdin, err := cmd.StdinPipe()
+		if err != nil {
+			log.Errorf("error creating input for job #%d: %s", j.ID, err)
+			return err
+		}
+		j.Lock()
+		j.input = stdin
+		j.Unlock()
+	} else {
+		stdin, err := j.Input()
+		if err != nil {
+			log.Errorf("error reading input for job #%d: %s", j.ID, err)
+			return err
+		}
+		cmd.Stdin = stdin
+	}
 
 	j.Lock()
 	j.cmd = cmd

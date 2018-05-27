@@ -46,11 +46,12 @@ func (c *Client) request(method, url string, body io.Reader) (res []*je.Job, err
 	if response.StatusCode == http.StatusNotFound {
 		return
 	} else if response.StatusCode == http.StatusOK {
-		defer response.Body.Close()
-		err = json.NewDecoder(response.Body).Decode(&res)
-		if err != nil {
-			log.Errorf("error decoding response from %s: %s", url, err)
-			return
+		if response.Header.Get("Content-Type") == "application/json" {
+			err = json.NewDecoder(response.Body).Decode(&res)
+			if err != nil {
+				log.Errorf("error decoding response from %s: %s", url, err)
+				return
+			}
 		}
 	} else {
 		err = fmt.Errorf("unexpected response %s from %s %s", response.Status, method, url)
