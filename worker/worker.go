@@ -15,6 +15,7 @@ type Task interface {
 	Start(worker string) error
 	Stop() error
 	Kill(force bool) error
+	Close() error
 	Write(input io.Reader) (int64, error)
 	Execute() error
 	Error(err error) error
@@ -103,6 +104,13 @@ func (w *Worker) Kill(force bool) error {
 	defer w.RUnlock()
 
 	return w.task.Kill(force)
+}
+
+func (w Worker) Close() error {
+	w.RLock()
+	defer w.RUnlock()
+
+	return w.task.Close()
 }
 
 func (w *Worker) Write(input io.Reader) (int64, error) {

@@ -294,3 +294,35 @@ func (s *Server) WriteHandler() httprouter.Handle {
 		}
 	}
 }
+
+// CloseHandler ...
+func (s *Server) CloseHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		var job Job
+
+		id := SafeParseInt(p.ByName("id"), 0)
+
+		if id <= 0 {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		err := db.One("ID", id, &job)
+		if err != nil && err == storm.ErrNotFound {
+			http.Error(w, "Not Found", http.StatusNotFound)
+			return
+		}
+
+		worker := s.pool.GetWorker(job.Worker)
+		if worker == nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		err = worker.Close()
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	}
+}

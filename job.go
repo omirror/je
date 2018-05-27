@@ -116,6 +116,14 @@ func (j *Job) SetInput(input io.Reader) error {
 	return nil
 }
 
+func (j *Job) Close() error {
+	if !j.Interactive {
+		return fmt.Errorf("cannot write to a non-interactive job")
+	}
+
+	return j.input.Close()
+}
+
 func (j *Job) Write(input io.Reader) (int64, error) {
 	if !j.Interactive {
 		return 0, fmt.Errorf("cannot write to a non-interactive job")
