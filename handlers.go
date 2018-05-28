@@ -11,10 +11,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	// Database
-	"github.com/asdine/storm"
-	"github.com/asdine/storm/q"
-
 	// Routing
 	"github.com/julienschmidt/httprouter"
 )
@@ -22,33 +18,29 @@ import (
 // SearchHandler ...
 func (s *Server) SearchHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		var jobs []*Job
+		var (
+			err  error
+			jobs []*Job
+		)
 
 		qs := r.URL.Query()
 
-		if id := SafeParseInt(p.ByName("id"), 0); id > 0 {
-			err := db.Find("ID", id, &jobs)
-			if err != nil && err == storm.ErrNotFound {
+		if id := ParseId(p.ByName("id")); id > 0 {
+			jobs, err = db.Find(id)
+			if err != nil {
 				http.Error(w, "Not Found", http.StatusNotFound)
 				return
 			}
-		} else if name := qs.Get("name"); name != "" {
-			err := db.Select(q.Re("Name", name)).Find(&jobs)
-			if err != nil && err == storm.ErrNotFound {
-				http.Error(w, "Not Found", http.StatusNotFound)
-				return
-			}
-		} else if state := ParseState(qs.Get("state")); state != State(0) {
-			err := db.Find("State", state, &jobs)
-			if err != nil && err == storm.ErrNotFound {
+		} else if q := qs.Get("q"); q != "" {
+			jobs, err = db.Search(q)
+			if err != nil {
 				http.Error(w, "Not Found", http.StatusNotFound)
 				return
 			}
 		} else {
-			err := db.All(&jobs)
+			jobs, err = db.All()
 			if err != nil {
-				log.Errorf("error querying jobs index: %s", err)
-				http.Error(w, "Internal Error", http.StatusInternalServerError)
+				http.Error(w, "Not Found", http.StatusNotFound)
 				return
 			}
 		}
@@ -67,18 +59,16 @@ func (s *Server) SearchHandler() httprouter.Handle {
 // LogsHandler ...
 func (s *Server) LogsHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		var job Job
-
 		qs := r.URL.Query()
-		id := SafeParseInt(p.ByName("id"), 0)
+		id := ParseId(p.ByName("id"))
 
 		if id <= 0 {
 			http.Error(w, "Bad Request", http.StatusBadRequest)
 			return
 		}
 
-		err := db.One("ID", id, &job)
-		if err != nil && err == storm.ErrNotFound {
+		job, err := db.Get(id)
+		if err != nil {
 			http.Error(w, "Not Found", http.StatusNotFound)
 			return
 		}
@@ -126,18 +116,16 @@ func (s *Server) LogsHandler() httprouter.Handle {
 // OutputHandler ...
 func (s *Server) OutputHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		var job Job
-
 		qs := r.URL.Query()
-		id := SafeParseInt(p.ByName("id"), 0)
+		id := ParseId(p.ByName("id"))
 
 		if id <= 0 {
 			http.Error(w, "Bad Request", http.StatusBadRequest)
 			return
 		}
 
-		err := db.One("ID", id, &job)
-		if err != nil && err == storm.ErrNotFound {
+		job, err := db.Get(id)
+		if err != nil {
 			http.Error(w, "Not Found", http.StatusNotFound)
 			return
 		}
@@ -145,6 +133,7 @@ func (s *Server) OutputHandler() httprouter.Handle {
 		if qs.Get("follow") == "" {
 			output, err := job.Output()
 			if err != nil {
+				log.Errorf("error reading job output for #%d: %s", id, err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}
@@ -185,18 +174,16 @@ func (s *Server) OutputHandler() httprouter.Handle {
 // KillHandler ...
 func (s *Server) KillHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		var job Job
-
 		qs := r.URL.Query()
-		id := SafeParseInt(p.ByName("id"), 0)
+		id := ParseId(p.ByName("id"))
 
 		if id <= 0 {
 			http.Error(w, "Bad Request", http.StatusBadRequest)
 			return
 		}
 
-		err := db.One("ID", id, &job)
-		if err != nil && err == storm.ErrNotFound {
+		job, err := db.Get(id)
+		if err != nil {
 			http.Error(w, "Not Found", http.StatusNotFound)
 			return
 		}
@@ -265,17 +252,15 @@ func (s *Server) CreateHandler() httprouter.Handle {
 // WriteHandler ...
 func (s *Server) WriteHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		var job Job
-
-		id := SafeParseInt(p.ByName("id"), 0)
+		id := ParseId(p.ByName("id"))
 
 		if id <= 0 {
 			http.Error(w, "Bad Request", http.StatusBadRequest)
 			return
 		}
 
-		err := db.One("ID", id, &job)
-		if err != nil && err == storm.ErrNotFound {
+		job, err := db.Get(id)
+		if err != nil {
 			http.Error(w, "Not Found", http.StatusNotFound)
 			return
 		}
@@ -298,17 +283,15 @@ func (s *Server) WriteHandler() httprouter.Handle {
 // CloseHandler ...
 func (s *Server) CloseHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		var job Job
-
-		id := SafeParseInt(p.ByName("id"), 0)
+		id := ParseId(p.ByName("id"))
 
 		if id <= 0 {
 			http.Error(w, "Bad Request", http.StatusBadRequest)
 			return
 		}
 
-		err := db.One("ID", id, &job)
-		if err != nil && err == storm.ErrNotFound {
+		job, err := db.Get(id)
+		if err != nil {
 			http.Error(w, "Not Found", http.StatusNotFound)
 			return
 		}

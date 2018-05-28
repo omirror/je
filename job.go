@@ -19,18 +19,18 @@ import (
 type Job struct {
 	sync.RWMutex
 
-	ID          uint64    `storm:"id,increment"`
-	Name        string    `storm:"index"`
-	Args        []string  `storm:"index"`
-	Interactive bool      `storm:"index"`
-	Worker      string    `storm:"index"`
-	State       State     `storm:"index"`
-	Status      int       `storm:"index"`
-	CreatedAt   time.Time `storm:"index"`
-	StartedAt   time.Time `storm:"index"`
-	StoppedAt   time.Time `storm:"index"`
-	KilledAt    time.Time `storm:"index"`
-	ErroredAt   time.Time `storm:"index"`
+	ID          ID        `json:"id"`
+	Name        string    `json:"name"`
+	Args        []string  `json:"args"`
+	Interactive bool      `json:"interactive"`
+	Worker      string    `json:"worker"`
+	State       State     `json:"state"`
+	Status      int       `json:"status"`
+	CreatedAt   time.Time `json:"created"`
+	StartedAt   time.Time `json:"started"`
+	StoppedAt   time.Time `json:"stopped"`
+	KilledAt    time.Time `json:"killed"`
+	ErroredAt   time.Time `json:"errored"`
 
 	input io.WriteCloser
 	cmd   *exec.Cmd
@@ -39,6 +39,7 @@ type Job struct {
 
 func NewJob(name string, args []string, interactive bool) (job *Job, err error) {
 	job = &Job{
+		ID:          db.NextId(),
 		Name:        name,
 		Args:        args,
 		Interactive: interactive,
@@ -50,7 +51,7 @@ func NewJob(name string, args []string, interactive bool) (job *Job, err error) 
 	return
 }
 
-func (j *Job) Id() uint64 {
+func (j *Job) Id() ID {
 	return j.ID
 }
 
@@ -202,7 +203,7 @@ func (j *Job) OutputTail(ctx context.Context) (lines chan string, errors chan er
 	return
 }
 
-func (j *Job) Execute() error {
+func (j *Job) Execute() (err error) {
 	cmd := exec.Command(j.Name, j.Args...)
 
 	if j.Interactive {
@@ -239,11 +240,6 @@ func (j *Job) Execute() error {
 		return err
 	}
 
-	if err = cmd.Start(); err != nil {
-		log.Errorf("error starting job #%d: %s", j.ID, err)
-		return err
-	}
-
 	logf, err := os.OpenFile(fmt.Sprintf("%d.log", j.ID), os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		log.Errorf("error creating logfile for job #%s: %s", j.ID, err)
@@ -266,6 +262,11 @@ func (j *Job) Execute() error {
 		defer outf.Close()
 		_, err = io.Copy(outf, stdout)
 	}()
+
+	if err = cmd.Start(); err != nil {
+		log.Errorf("error starting job #%d: %s", j.ID, err)
+		return err
+	}
 
 	if err := cmd.Wait(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {

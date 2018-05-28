@@ -19,7 +19,7 @@ func main() {
 		version bool
 		debug   bool
 
-		dbpath  string
+		dburi   string
 		bind    string
 		workers int
 	)
@@ -27,7 +27,7 @@ func main() {
 	flag.BoolVar(&version, "v", false, "display version information")
 	flag.BoolVar(&debug, "d", false, "enable debug logging")
 
-	flag.StringVar(&dbpath, "dbpath", "je.db", "Database path")
+	flag.StringVar(&dburi, "dburi", "memory://", "Database URI")
 	flag.StringVar(&bind, "bind", "0.0.0.0:8000", "[int]:<port> to bind to")
 	flag.IntVar(&workers, "workers", 16, "worker pool size")
 
@@ -52,7 +52,12 @@ func main() {
 		Workers: workers,
 	}
 
-	db := je.InitDB(dbpath)
+	db, err := je.InitDB(dburi)
+	if err != nil {
+		log.Errorf("error initializing database: %s", err)
+		os.Exit(1)
+	}
+
 	defer db.Close()
 
 	log.Infof("je %s listening on %s", je.FullVersion(), bind)

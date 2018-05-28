@@ -28,9 +28,9 @@ func (c *Client) Search(options *SearchOptions) (res []*je.Job, err error) {
 	case filter.ID != "":
 		url += fmt.Sprintf("/%s", filter.ID)
 	case filter.Name != "":
-		url += fmt.Sprintf("?name=%s", filter.Name)
+		url += fmt.Sprintf("?q=name:%s", filter.Name)
 	case filter.State != "":
-		url += fmt.Sprintf("?state=%s", filter.State)
+		url += fmt.Sprintf("?q=state:%d", je.ParseState(filter.State))
 	}
 
 	return c.request("GET", url, nil)

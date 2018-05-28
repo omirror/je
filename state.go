@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	_ = iota
+	_ State = iota
 	STATE_CREATED
 	STATE_WAITING
 	STATE_RUNNING

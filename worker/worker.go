@@ -10,7 +10,6 @@ import (
 )
 
 type Task interface {
-	Id() uint64
 	Enqueue() error
 	Start(worker string) error
 	Stop() error

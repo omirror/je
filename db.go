@@ -1,22 +1,32 @@
 package je
 
 import (
-	"log"
+	"fmt"
+	"net/url"
 
-	"github.com/asdine/storm"
-	"github.com/asdine/storm/codec/msgpack"
+	log "github.com/sirupsen/logrus"
 )
 
-var (
-	db *storm.DB
-)
+var db Store
 
-func InitDB(path string) *storm.DB {
-	var err error
-
-	db, err = storm.Open(path, storm.Codec(msgpack.Codec), storm.Batch())
+func InitDB(uri string) (Store, error) {
+	u, err := url.Parse(uri)
 	if err != nil {
-		log.Fatal(err)
+		log.Errorf("error parsing db uri %s: %s", uri, err)
+		return nil, err
 	}
-	return db
+
+	switch u.Scheme {
+	case "memory":
+		db, err = NewMemoryStore()
+		if err != nil {
+			log.Errorf("error creating store %s: %s", uri, err)
+			return nil, err
+		}
+		return db, nil
+	default:
+		err := fmt.Errorf("unsupported db uri: %s", uri)
+		log.Error(err)
+		return nil, err
+	}
 }

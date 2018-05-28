@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"git.mills.io/prologic/je"
 	"git.mills.io/prologic/je/client"
 )
 
@@ -35,7 +36,7 @@ func init() {
 func ps(c *client.Client) int {
 	res, err := c.Search(&client.SearchOptions{
 		Filter: &client.SearchFilter{
-			State: "running",
+			State: je.STATE_RUNNING.String(),
 		},
 	})
 
