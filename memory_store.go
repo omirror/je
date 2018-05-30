@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -120,6 +121,7 @@ func NewMemoryStore() (Store, error) {
 		log.Errorf("error creating index: %s", err)
 		return nil, err
 	}
+	index = NewIndexBatcher(index, time.Millisecond*100)
 
 	return &MemoryStore{
 		data:  make(map[ID]*Job),

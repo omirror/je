@@ -100,7 +100,7 @@ func (j *Job) Wait() {
 	<-j.done
 }
 
-func (j *Job) Input() (io.Reader, error) {
+func (j *Job) Input() (io.ReadCloser, error) {
 	return os.Open(fmt.Sprintf("%d.in", j.ID))
 }
 
@@ -212,6 +212,7 @@ func (j *Job) Execute() (err error) {
 			log.Errorf("error creating input for job #%d: %s", j.ID, err)
 			return err
 		}
+		defer stdin.Close()
 		j.Lock()
 		j.input = stdin
 		j.Unlock()
@@ -221,6 +222,7 @@ func (j *Job) Execute() (err error) {
 			log.Errorf("error reading input for job #%d: %s", j.ID, err)
 			return err
 		}
+		defer stdin.Close()
 		cmd.Stdin = stdin
 	}
 
@@ -233,33 +235,35 @@ func (j *Job) Execute() (err error) {
 		log.Errorf("error reading logs from job #%d: %s", j.ID, err)
 		return err
 	}
+	defer stderr.Close()
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Errorf("error reading output from job #%d: %s", j.ID, err)
 		return err
 	}
+	defer stdout.Close()
 
 	logf, err := os.OpenFile(fmt.Sprintf("%d.log", j.ID), os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		log.Errorf("error creating logfile for job #%s: %s", j.ID, err)
 		return err
 	}
+	defer logf.Close()
 
 	outf, err := os.OpenFile(fmt.Sprintf("%d.out", j.ID), os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		log.Errorf("error creating output file for job #%s: %s", j.ID, err)
 		return err
 	}
+	defer outf.Close()
 
 	// TODO: Check if written < len(res.Log)?
 	go func() {
-		defer logf.Close()
 		_, err = io.Copy(logf, stderr)
 	}()
 
 	go func() {
-		defer outf.Close()
 		_, err = io.Copy(outf, stdout)
 	}()
 
