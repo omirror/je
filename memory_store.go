@@ -101,7 +101,9 @@ func (store *MemoryStore) Search(q string) (jobs []*Job, err error) {
 	}
 
 	for _, hit := range res.Hits {
+		store.RLock()
 		job, ok := store.data[ParseId(hit.ID)]
+		store.RUnlock()
 		if !ok {
 			log.Warnf("job #%s missing from store but exists in index!", hit.ID)
 			continue
