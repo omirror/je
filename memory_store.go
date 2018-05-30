@@ -102,8 +102,7 @@ func (store *MemoryStore) Search(q string) (jobs []*Job, err error) {
 
 	log.Debugf("Search results: %+v", res)
 
-	for i := uint64(0); i < res.Total; i++ {
-		hit := res.Hits[i]
+	for _, hit := range res.Hits {
 		job, ok := store.data[ParseId(hit.ID)]
 		if !ok {
 			log.Warnf("job #%s missing from store but exists in index!", hit.ID)
