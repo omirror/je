@@ -100,8 +100,6 @@ func (store *MemoryStore) Search(q string) (jobs []*Job, err error) {
 		return
 	}
 
-	log.Debugf("Search results: %+v", res)
-
 	for _, hit := range res.Hits {
 		job, ok := store.data[ParseId(hit.ID)]
 		if !ok {

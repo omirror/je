@@ -76,7 +76,6 @@ func (p *Pool) Submit(task Task) error {
 	// TODO: Return an error if the task queue is full?
 	p.tasks <- task
 	task.Enqueue()
-	log.Debugf("task enqueued for execution: %+v", task)
 	return nil
 }
 
@@ -131,8 +130,6 @@ func (w *Worker) Run(tasks chan Task, kill chan struct{}, wg sync.WaitGroup) {
 			w.Lock()
 			w.task = task
 			w.Unlock()
-
-			log.Debugf("executingn task: %+v", task)
 
 			task.Start(w.Id())
 			err := task.Execute()
