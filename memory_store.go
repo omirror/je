@@ -1,8 +1,6 @@
 package je
 
 import (
-	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -10,19 +8,6 @@ import (
 
 	"github.com/blevesearch/bleve"
 )
-
-var (
-	ErrNotExist = errors.New("key does not exist")
-)
-
-type KeyError struct {
-	Key ID
-	Err error
-}
-
-func (e *KeyError) Error() string {
-	return fmt.Sprintf("%s: %d", e.Err, e.Key)
-}
 
 type MemoryStore struct {
 	sync.RWMutex

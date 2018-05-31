@@ -1,0 +1,187 @@
+package je
+
+import (
+	"encoding/binary"
+	"encoding/json"
+	"time"
+
+	log "github.com/sirupsen/logrus"
+
+	"github.com/blevesearch/bleve"
+	"github.com/coreos/bbolt"
+)
+
+func idToBytes(id ID) []byte {
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, uint64(id))
+	return b
+}
+
+type BoltStore struct {
+	db     *bolt.DB
+	nextid *IdGenerator
+	index  bleve.Index
+}
+
+func (store *BoltStore) Close() error {
+	return store.db.Close()
+}
+
+func (store *BoltStore) NextId() ID {
+	return ID(0)
+}
+
+func (store *BoltStore) Save(job *Job) error {
+	err := store.db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte("jobs"))
+		if err != nil {
+			log.Errorf("error creating jobs bucket: %s", err)
+			return err
+		}
+
+		if job.ID == ID(0) {
+			id, err := b.NextSequence()
+			if err != nil {
+				log.Errorf("error generating new jobs sequence: %s", err)
+				return err
+			}
+			job.ID = ID(id)
+		}
+
+		buf, err := json.Marshal(job)
+		if err != nil {
+			log.Errorf("error serializing job: %s", err)
+			return err
+		}
+
+		key := idToBytes(job.ID)
+		return b.Put(key, buf)
+	})
+
+	if err != nil {
+		log.Errorf("error saving job: %s", err)
+		return err
+	}
+
+	store.index.Index(job.ID.String(), job)
+
+	return nil
+}
+
+func (store *BoltStore) Get(id ID) (*Job, error) {
+	var job Job
+
+	err := store.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("jobs"))
+		if b == nil {
+			return nil
+		}
+
+		key := idToBytes(id)
+		buf := b.Get(key)
+		if buf == nil {
+			log.Errorf("job #%d not found", id)
+			err := &KeyError{id, ErrNotExist}
+			return err
+		}
+
+		err := json.Unmarshal(buf, &job)
+		if err != nil {
+			log.Errorf("error deserializing job #%s: %s", id, err)
+			return err
+		}
+
+		return nil
+	})
+
+	return &job, err
+}
+
+func (store *BoltStore) Find(ids ...ID) (jobs []*Job, err error) {
+	err = store.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("jobs"))
+		if b == nil {
+			return nil
+		}
+
+		for _, id := range ids {
+			var job Job
+			key := idToBytes(id)
+			buf := b.Get(key)
+			err := json.Unmarshal(buf, &job)
+			if err != nil {
+				log.Errorf("error deserializing job #%s: %s", id, err)
+				return err
+			}
+
+			jobs = append(jobs, &job)
+		}
+		return nil
+	})
+
+	return
+}
+
+func (store *BoltStore) All() (jobs []*Job, err error) {
+	err = store.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("jobs"))
+		if b == nil {
+			return nil
+		}
+
+		b.ForEach(func(k, v []byte) error {
+			var job Job
+			err := json.Unmarshal(v, &job)
+			if err != nil {
+				log.Errorf("error deserializing jobs: %s", err)
+				return err
+			}
+
+			jobs = append(jobs, &job)
+			return nil
+		})
+		return nil
+	})
+
+	return
+}
+
+func (store *BoltStore) Search(q string) (jobs []*Job, err error) {
+	query := bleve.NewQueryStringQuery(q)
+	req := bleve.NewSearchRequest(query)
+	res, err := store.index.Search(req)
+	if err != nil {
+		log.Errorf("error performing index search %s: %s", q, err)
+		return
+	}
+
+	var ids []ID
+	for _, hit := range res.Hits {
+		ids = append(ids, ParseId(hit.ID))
+	}
+
+	jobs, err = store.Find(ids...)
+
+	return
+}
+
+func NewBoltStore(path string) (Store, error) {
+	db, err := bolt.Open(path, 0644, &bolt.Options{})
+	if err != nil {
+		log.Errorf("error opening store %s: %s", path, err)
+		return nil, err
+	}
+
+	index, err := bleve.NewMemOnly(bleve.NewIndexMapping())
+	if err != nil {
+		log.Errorf("error creating index: %s", err)
+		return nil, err
+	}
+	index = NewIndexBatcher(index, time.Millisecond*100)
+
+	return &BoltStore{
+		db:     db,
+		nextid: &IdGenerator{},
+		index:  index,
+	}, nil
+}
