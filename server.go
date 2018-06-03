@@ -15,12 +15,14 @@ import (
 )
 
 const (
-	DefaultWorkers = 16
+	DefaultDataPath = "./data"
+	DefaultThreads  = 16
 )
 
 // Options ...
 type Options struct {
-	Workers int
+	Data    string
+	Threads int
 }
 
 // Server ...
@@ -59,20 +61,20 @@ func (s *Server) initRoutes() {
 // NewServer ...
 func NewServer(bind string, options *Options) *Server {
 	var (
-		workers int
+		threads int
 	)
 
 	if options != nil {
-		workers = options.Workers
+		threads = options.Threads
 	} else {
-		workers = DefaultWorkers
+		threads = DefaultThreads
 	}
 
 	server := &Server{
 		bind: bind,
 
 		// Worker Pool
-		pool: worker.NewPool(workers),
+		pool: worker.NewPool(threads),
 
 		// Router
 		router: httprouter.New(),

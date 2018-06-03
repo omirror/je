@@ -74,7 +74,7 @@ func (s *Server) LogsHandler() httprouter.Handle {
 		}
 
 		if qs.Get("follow") == "" {
-			logs, err := job.Logs()
+			logs, err := data.Read(job.ID, DATA_LOGS)
 			if err != nil {
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
@@ -86,7 +86,7 @@ func (s *Server) LogsHandler() httprouter.Handle {
 		} else {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			lines, errors := job.LogsTail(ctx)
+			lines, errors := data.Tail(job.ID, DATA_LOGS, ctx)
 			for {
 				select {
 				case line := <-lines:
@@ -131,7 +131,7 @@ func (s *Server) OutputHandler() httprouter.Handle {
 		}
 
 		if qs.Get("follow") == "" {
-			output, err := job.Output()
+			output, err := data.Read(job.ID, DATA_OUTPUT)
 			if err != nil {
 				log.Errorf("error reading job output for #%d: %s", id, err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -144,7 +144,7 @@ func (s *Server) OutputHandler() httprouter.Handle {
 		} else {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			lines, errors := job.OutputTail(ctx)
+			lines, errors := data.Tail(job.ID, DATA_OUTPUT, ctx)
 			for {
 				select {
 				case line := <-lines:
@@ -223,12 +223,14 @@ func (s *Server) CreateHandler() httprouter.Handle {
 			return
 		}
 
-		err = job.SetInput(r.Body)
+		input, err := data.Write(job.ID, DATA_INPUT)
 		if err != nil {
-			log.Errorf("error setting job input for #%d: %s", job.ID, err)
+			log.Errorf("error creating job input for #%d: %s", job.ID, err)
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
 			return
 		}
+		io.Copy(input, r.Body)
+		input.Close()
 
 		err = s.pool.Submit(job)
 		if err != nil {

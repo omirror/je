@@ -1,7 +1,6 @@
 package je
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -11,8 +10,6 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-
-	"github.com/hpcloud/tail"
 )
 
 // Job ...
@@ -100,23 +97,6 @@ func (j *Job) Wait() {
 	<-j.done
 }
 
-func (j *Job) Input() (io.ReadCloser, error) {
-	return os.Open(fmt.Sprintf("%d.in", j.ID))
-}
-
-func (j *Job) SetInput(input io.Reader) error {
-	inf, err := os.OpenFile(fmt.Sprintf("%d.in", j.ID), os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		log.Errorf("error creating input file for job #%s: %s", j.ID, err)
-		return err
-	}
-	defer inf.Close()
-
-	io.Copy(inf, input)
-
-	return nil
-}
-
 func (j *Job) Close() error {
 	if !j.Interactive {
 		return fmt.Errorf("cannot write to a non-interactive job")
@@ -133,76 +113,6 @@ func (j *Job) Write(input io.Reader) (int64, error) {
 	return io.Copy(j.input, input)
 }
 
-func (j *Job) Logs() (io.ReadCloser, error) {
-	return os.Open(fmt.Sprintf("%d.log", j.ID))
-}
-
-func (j *Job) LogsTail(ctx context.Context) (lines chan string, errors chan error) {
-	lines = make(chan string)
-	errors = make(chan error)
-
-	t, err := tail.TailFile(
-		fmt.Sprintf("%d.log", j.ID),
-		tail.Config{Follow: true},
-	)
-	if err != nil {
-		log.Errorf("error tailing output for job #%d: %s", err)
-		errors <- err
-		return
-	}
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case line := <-t.Lines:
-				if line.Err != nil {
-					errors <- line.Err
-				} else {
-					lines <- line.Text
-				}
-			}
-		}
-	}()
-	return
-}
-
-func (j *Job) Output() (io.ReadCloser, error) {
-	return os.Open(fmt.Sprintf("%d.out", j.ID))
-}
-
-func (j *Job) OutputTail(ctx context.Context) (lines chan string, errors chan error) {
-	lines = make(chan string)
-	errors = make(chan error)
-
-	t, err := tail.TailFile(
-		fmt.Sprintf("%d.out", j.ID),
-		tail.Config{Follow: true},
-	)
-	if err != nil {
-		log.Errorf("error tailing output for job #%d: %s", err)
-		errors <- err
-		return
-	}
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case line := <-t.Lines:
-				if line.Err != nil {
-					errors <- line.Err
-				} else {
-					lines <- line.Text
-				}
-			}
-		}
-	}()
-	return
-}
-
 func (j *Job) Execute() (err error) {
 	cmd := exec.Command(j.Name, j.Args...)
 
@@ -217,7 +127,7 @@ func (j *Job) Execute() (err error) {
 		j.input = stdin
 		j.Unlock()
 	} else {
-		stdin, err := j.Input()
+		stdin, err := data.Read(j.ID, DATA_INPUT)
 		if err != nil {
 			log.Errorf("error reading input for job #%d: %s", j.ID, err)
 			return err
@@ -244,27 +154,28 @@ func (j *Job) Execute() (err error) {
 	}
 	defer stdout.Close()
 
-	logf, err := os.OpenFile(fmt.Sprintf("%d.log", j.ID), os.O_RDWR|os.O_CREATE, 0644)
+	logs, err := data.Write(j.ID, DATA_LOGS)
 	if err != nil {
-		log.Errorf("error creating logfile for job #%s: %s", j.ID, err)
+		log.Errorf("error creating logs for job #%s: %s", j.ID, err)
 		return err
 	}
-	defer logf.Close()
+	defer logs.Close()
 
-	outf, err := os.OpenFile(fmt.Sprintf("%d.out", j.ID), os.O_RDWR|os.O_CREATE, 0644)
+	output, err := data.Write(j.ID, DATA_OUTPUT)
 	if err != nil {
-		log.Errorf("error creating output file for job #%s: %s", j.ID, err)
+		log.Errorf("error creating output for job #%s: %s", j.ID, err)
 		return err
 	}
-	defer outf.Close()
+	defer output.Close()
 
 	// TODO: Check if written < len(res.Log)?
 	go func() {
-		_, err = io.Copy(logf, stderr)
+		_, err = io.Copy(logs, stderr)
 	}()
 
+	// TODO: Check if written < len(res.Log)?
 	go func() {
-		_, err = io.Copy(outf, stdout)
+		_, err = io.Copy(output, stdout)
 	}()
 
 	if err = cmd.Start(); err != nil {

@@ -19,17 +19,19 @@ func main() {
 		version bool
 		debug   bool
 
+		datadir string
 		dburi   string
 		bind    string
-		workers int
+		threads int
 	)
 
 	flag.BoolVar(&version, "v", false, "display version information")
 	flag.BoolVar(&debug, "d", false, "enable debug logging")
 
-	flag.StringVar(&dburi, "dburi", "memory://", "Database URI")
+	flag.StringVar(&datadir, "datadir", "./data", "data directory")
+	flag.StringVar(&dburi, "dburi", "memory://", "database to use")
 	flag.StringVar(&bind, "bind", "0.0.0.0:8000", "[int]:<port> to bind to")
-	flag.IntVar(&workers, "workers", 16, "worker pool size")
+	flag.IntVar(&threads, "threads", 16, "worker threads")
 
 	flag.Parse()
 
@@ -49,7 +51,14 @@ func main() {
 	}
 
 	opts := &je.Options{
-		Workers: workers,
+		Data:    datadir,
+		Threads: threads,
+	}
+
+	_, err := je.InitData(datadir)
+	if err != nil {
+		log.Errorf("error initializing data storage: %s", err)
+		os.Exit(1)
 	}
 
 	db, err := je.InitDB(dburi)
