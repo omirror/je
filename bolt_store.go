@@ -2,13 +2,15 @@ package je
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/blevesearch/bleve"
 	"github.com/coreos/bbolt"
+
+	"git.mills.io/prologic/je/codec"
+	"git.mills.io/prologic/je/codec/json"
 )
 
 func idToBytes(id ID) []byte {
@@ -21,6 +23,7 @@ type BoltStore struct {
 	db     *bolt.DB
 	nextid *IdGenerator
 	index  bleve.Index
+	codec  codec.MarshalUnmarshaler
 }
 
 func (store *BoltStore) Close() error {
@@ -48,7 +51,7 @@ func (store *BoltStore) Save(job *Job) error {
 			job.ID = ID(id)
 		}
 
-		buf, err := json.Marshal(job)
+		buf, err := store.codec.Marshal(job)
 		if err != nil {
 			log.Errorf("error serializing job: %s", err)
 			return err
@@ -85,7 +88,7 @@ func (store *BoltStore) Get(id ID) (*Job, error) {
 			return err
 		}
 
-		err := json.Unmarshal(buf, &job)
+		err := store.codec.Unmarshal(buf, &job)
 		if err != nil {
 			log.Errorf("error deserializing job #%s: %s", id, err)
 			return err
@@ -108,7 +111,7 @@ func (store *BoltStore) Find(ids ...ID) (jobs []*Job, err error) {
 			var job Job
 			key := idToBytes(id)
 			buf := b.Get(key)
-			err := json.Unmarshal(buf, &job)
+			err := store.codec.Unmarshal(buf, &job)
 			if err != nil {
 				log.Errorf("error deserializing job #%s: %s", id, err)
 				return err
@@ -131,7 +134,7 @@ func (store *BoltStore) All() (jobs []*Job, err error) {
 
 		b.ForEach(func(k, v []byte) error {
 			var job Job
-			err := json.Unmarshal(v, &job)
+			err := store.codec.Unmarshal(v, &job)
 			if err != nil {
 				log.Errorf("error deserializing jobs: %s", err)
 				return err
@@ -183,5 +186,6 @@ func NewBoltStore(path string) (Store, error) {
 		db:     db,
 		nextid: &IdGenerator{},
 		index:  index,
+		codec:  json.Codec,
 	}, nil
 }
