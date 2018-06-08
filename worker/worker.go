@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"fmt"
 	"io"
 	"sync"
 
@@ -14,6 +15,7 @@ type Task interface {
 	Start(worker string) error
 	Stop() error
 	Kill(force bool) error
+	Killed() bool
 	Close() error
 	Write(input io.Reader) (int64, error)
 	Execute() error
@@ -26,15 +28,15 @@ type Pool struct {
 
 	size    int
 	tasks   chan Task
-	kill    chan struct{}
+	kill    chan bool
 	wg      sync.WaitGroup
 	workers map[string]*Worker
 }
 
 func NewPool(size int) *Pool {
 	pool := &Pool{
-		tasks:   make(chan Task, 128),
-		kill:    make(chan struct{}),
+		tasks:   make(chan Task),
+		kill:    make(chan bool),
 		workers: make(map[string]*Worker),
 	}
 	pool.Resize(size)
@@ -60,7 +62,7 @@ func (p *Pool) Resize(n int) {
 	}
 	for p.size > n {
 		p.size--
-		p.kill <- struct{}{}
+		p.kill <- true
 	}
 }
 
@@ -73,10 +75,13 @@ func (p *Pool) Wait() {
 }
 
 func (p *Pool) Submit(task Task) error {
-	// TODO: Return an error if the task queue is full?
-	p.tasks <- task
-	task.Enqueue()
-	return nil
+	select {
+	case p.tasks <- task:
+		task.Enqueue()
+		return nil
+	default:
+		return fmt.Errorf("all workers are busy")
+	}
 }
 
 type Worker struct {
@@ -118,7 +123,7 @@ func (w *Worker) Write(input io.Reader) (int64, error) {
 	return w.task.Write(input)
 }
 
-func (w *Worker) Run(tasks chan Task, kill chan struct{}, wg sync.WaitGroup) {
+func (w *Worker) Run(tasks chan Task, kill chan bool, wg sync.WaitGroup) {
 	defer wg.Done()
 	for {
 		select {
@@ -133,12 +138,14 @@ func (w *Worker) Run(tasks chan Task, kill chan struct{}, wg sync.WaitGroup) {
 
 			task.Start(w.Id())
 			err := task.Execute()
-			task.Stop()
-
 			if err != nil {
 				log.Errorf("error executing task: %s", err)
 				task.Error(err)
 			}
+			if !task.Killed() {
+				task.Stop()
+			}
+
 		case <-kill:
 			return
 		}

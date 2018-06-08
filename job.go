@@ -113,6 +113,10 @@ func (j *Job) Write(input io.Reader) (int64, error) {
 	return io.Copy(j.input, input)
 }
 
+func (j *Job) Killed() bool {
+	return j.State == STATE_KILLED
+}
+
 func (j *Job) Execute() (err error) {
 	cmd := exec.Command(j.Name, j.Args...)
 

@@ -194,7 +194,7 @@ func (s *Server) KillHandler() httprouter.Handle {
 			return
 		}
 
-		err = worker.Kill(qs.Get("force") == "")
+		err = worker.Kill(qs.Get("force") != "")
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
