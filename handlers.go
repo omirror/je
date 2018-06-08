@@ -229,8 +229,17 @@ func (s *Server) CreateHandler() httprouter.Handle {
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
 			return
 		}
-		io.Copy(input, r.Body)
-		input.Close()
+
+		n, err := io.Copy(input, r.Body)
+		log.Debugf("written %d bytes of input for job #%d", n, job.ID)
+		if err != nil {
+			log.Errorf("error writing input for job #%d: %s", job.ID, err)
+		}
+
+		err = input.Close()
+		if err != nil {
+			log.Errorf("error closing input for job #%d: %s", job.ID, err)
+		}
 
 		err = s.pool.Submit(job)
 		if err != nil {

@@ -145,20 +145,19 @@ func (j *Job) Execute() (err error) {
 		log.Errorf("error reading logs from job #%d: %s", j.ID, err)
 		return err
 	}
-	defer stderr.Close()
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Errorf("error reading output from job #%d: %s", j.ID, err)
 		return err
 	}
-	defer stdout.Close()
 
 	logs, err := data.Write(j.ID, DATA_LOGS)
 	if err != nil {
 		log.Errorf("error creating logs for job #%s: %s", j.ID, err)
 		return err
 	}
+	// TODO: Check for errors? Retry RINTR?
 	defer logs.Close()
 
 	output, err := data.Write(j.ID, DATA_OUTPUT)
@@ -166,22 +165,46 @@ func (j *Job) Execute() (err error) {
 		log.Errorf("error creating output for job #%s: %s", j.ID, err)
 		return err
 	}
+	// TODO: Check for errors? Retry RINTR?
 	defer output.Close()
-
-	// TODO: Check if written < len(res.Log)?
-	go func() {
-		_, err = io.Copy(logs, stderr)
-	}()
-
-	// TODO: Check if written < len(res.Log)?
-	go func() {
-		_, err = io.Copy(output, stdout)
-	}()
 
 	if err = cmd.Start(); err != nil {
 		log.Errorf("error starting job #%d: %s", j.ID, err)
 		return err
 	}
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		n, err := io.Copy(logs, stderr)
+		log.Debugf("written %d bytes of logs for job #%d", n, j.ID)
+		if err != nil {
+			log.Errorf("error writing logs for job #%d: %s", j.ID, err)
+		}
+		err = stderr.Close()
+		if err != nil {
+			log.Errorf("error closing stderr for job #%d: %s", j.ID, err)
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		n, err := io.Copy(output, stdout)
+		log.Debugf("written %d bytes of output for job #%d", n, j.ID)
+		if err != nil {
+			log.Errorf("error writing output for job #%d: %s", j.ID, err)
+		}
+		err = stdout.Close()
+		if err != nil {
+			log.Errorf("error closing stdout for job #%d: %s", j.ID, err)
+		}
+	}()
+
+	// Wait for all io.Copy()s to complete
+	wg.Wait()
 
 	if err := cmd.Wait(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
