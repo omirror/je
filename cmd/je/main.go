@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 
 	log "github.com/sirupsen/logrus"
 
@@ -31,7 +32,7 @@ func main() {
 	flag.StringVar(&datadir, "datadir", "./data", "data directory")
 	flag.StringVar(&dburi, "dburi", "memory://", "database to use")
 	flag.StringVar(&bind, "bind", "0.0.0.0:8000", "[int]:<port> to bind to")
-	flag.IntVar(&threads, "threads", 16, "worker threads")
+	flag.IntVar(&threads, "threads", runtime.NumCPU(), "worker threads")
 
 	flag.Parse()
 
