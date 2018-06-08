@@ -77,8 +77,14 @@ func (store *MemoryStore) All() (jobs []*Job, err error) {
 }
 
 func (store *MemoryStore) Search(q string) (jobs []*Job, err error) {
+	size, err := store.index.DocCount()
+	if err != nil {
+		log.Errorf("error getting index size: %s", err)
+		return
+	}
+
 	query := bleve.NewQueryStringQuery(q)
-	req := bleve.NewSearchRequest(query)
+	req := bleve.NewSearchRequestOptions(query, int(size), 0, false)
 	res, err := store.index.Search(req)
 	if err != nil {
 		log.Errorf("error performing index search %s: %s", q, err)
