@@ -8,6 +8,7 @@ import (
 
 var (
 	db      Store
+	data    Data
 	metrics *Metrics
 )
 
@@ -46,4 +47,12 @@ func InitDB(uri string) (Store, error) {
 		log.Error(err)
 		return nil, err
 	}
+}
+
+func InitData(path string) (Data, error) {
+	var err error
+
+	data, err = NewLocalData(path)
+
+	return data, err
 }

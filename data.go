@@ -11,8 +11,6 @@ import (
 	"github.com/hpcloud/tail"
 )
 
-var data Data
-
 const (
 	DATA_INPUT DataType = iota
 	DATA_OUTPUT
@@ -98,12 +96,4 @@ func (d *LocalData) Tail(id ID, dtype DataType, ctx context.Context) (lines chan
 		}
 	}()
 	return
-}
-
-func InitData(path string) (Data, error) {
-	var err error
-
-	data, err = NewLocalData(path)
-
-	return data, err
 }

@@ -1,6 +1,7 @@
 package je
 
 import (
+	"io/ioutil"
 	"net/http"
 	"os"
 	"testing"
@@ -11,12 +12,27 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	datadir, err := ioutil.TempDir("", "jetest")
+	if err != nil {
+		log.Errorf("error creating test datadir: %s", err)
+		os.Exit(1)
+	}
+	defer os.RemoveAll(datadir)
+
+	_, err = InitData(datadir)
+	if err != nil {
+		log.Errorf("error initializing data: %s", err)
+		os.Exit(1)
+	}
+
 	db, err := InitDB("memory://")
 	if err != nil {
 		log.Errorf("error initializing database: %s", err)
 		os.Exit(1)
 	}
 	defer db.Close()
+
+	InitMetrics("jetest")
 
 	go NewServer(":8000", nil).ListenAndServe()
 

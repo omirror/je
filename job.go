@@ -49,15 +49,21 @@ func NewJob(name string, args []string, interactive bool) (job *Job, err error) 
 }
 
 func (j *Job) Id() ID {
+	j.RLock()
+	defer j.RUnlock()
 	return j.ID
 }
 
 func (j *Job) Enqueue() error {
+	j.Lock()
+	defer j.Unlock()
 	j.State = STATE_WAITING
 	return db.Save(j)
 }
 
 func (j *Job) Start(worker string) error {
+	j.Lock()
+	defer j.Unlock()
 	j.Worker = worker
 	j.State = STATE_RUNNING
 	j.StartedAt = time.Now()
@@ -65,6 +71,8 @@ func (j *Job) Start(worker string) error {
 }
 
 func (j *Job) Kill(force bool) (err error) {
+	j.Lock()
+	defer j.Unlock()
 	if force {
 		err = j.cmd.Process.Kill()
 		if err != nil {
@@ -81,6 +89,8 @@ func (j *Job) Kill(force bool) (err error) {
 }
 
 func (j *Job) Stop() error {
+	j.Lock()
+	defer j.Unlock()
 	j.done <- true
 	j.State = STATE_STOPPED
 	j.StoppedAt = time.Now()
@@ -88,6 +98,8 @@ func (j *Job) Stop() error {
 }
 
 func (j *Job) Error(err error) error {
+	j.Lock()
+	defer j.Unlock()
 	j.State = STATE_ERRORED
 	j.ErroredAt = time.Now()
 	return db.Save(j)
@@ -114,6 +126,8 @@ func (j *Job) Write(input io.Reader) (int64, error) {
 }
 
 func (j *Job) Killed() bool {
+	j.RLock()
+	defer j.RUnlock()
 	return j.State == STATE_KILLED
 }
 
