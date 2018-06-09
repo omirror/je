@@ -10,7 +10,7 @@ TAG?=latest
 BUILD?=-dev
 
 BUILD_TAGS="netgo static_build"
-BUILD_LDFLAGS="-w -X github.com/$(REPO).GitCommit=$(COMMIT) -X github.com/$(REPO)/Build=$(BUILD)"
+BUILD_LDFLAGS="-w -X git.mills.io/$(REPO).GitCommit=$(COMMIT) -X git.mills.io/$(REPO)/Build=$(BUILD)"
 
 all: dev
 
