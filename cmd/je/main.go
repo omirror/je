@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime"
 
 	log "github.com/sirupsen/logrus"
@@ -56,6 +57,8 @@ func main() {
 		Threads: threads,
 	}
 
+	metrics := je.InitMetrics("je")
+
 	_, err := je.InitData(datadir)
 	if err != nil {
 		log.Errorf("error initializing data storage: %s", err)
@@ -67,9 +70,18 @@ func main() {
 		log.Errorf("error initializing database: %s", err)
 		os.Exit(1)
 	}
-
 	defer db.Close()
 
+	server := je.NewServer(bind, opts)
+	server.AddRoute("GET", "/metrics", metrics.Handler())
+
 	log.Infof("je %s listening on %s", je.FullVersion(), bind)
-	je.NewServer(bind, opts).ListenAndServe()
+	server.ListenAndServe()
+
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, os.Interrupt)
+	<-sigint
+
+	log.Infof("shuting down...")
+	server.Shutdown()
 }

@@ -1,6 +1,7 @@
 package je
 
 import (
+	"context"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -27,7 +28,8 @@ type Options struct {
 
 // Server ...
 type Server struct {
-	bind string
+	bind   string
+	server *http.Server
 
 	// Worker Pool
 	pool *worker.Pool
@@ -41,10 +43,17 @@ type Server struct {
 
 // ListenAndServe ...
 func (s *Server) ListenAndServe() {
-	log.Fatal(http.ListenAndServe(
-		s.bind,
-		s.logger.Handler(s.router),
-	))
+	log.Fatal(s.server.ListenAndServe())
+}
+
+func (s *Server) AddRoute(method, path string, handler http.Handler) {
+	s.router.Handler(method, path, handler)
+}
+
+func (s *Server) Shutdown() {
+	if err := s.server.Shutdown(context.Background()); err != nil {
+		log.Errorf("error shutting down server: %v", err)
+	}
 }
 
 func (s *Server) initRoutes() {
@@ -70,20 +79,22 @@ func NewServer(bind string, options *Options) *Server {
 		threads = DefaultThreads
 	}
 
+	router := httprouter.New()
+
 	server := &Server{
-		bind: bind,
+		server: &http.Server{
+			Addr: bind,
+			Handler: logger.New(logger.Options{
+				Prefix:               "je",
+				RemoteAddressHeaders: []string{"X-Forwarded-For"},
+			}).Handler(router),
+		},
 
 		// Worker Pool
 		pool: worker.NewPool(threads),
 
 		// Router
-		router: httprouter.New(),
-
-		// Logger
-		logger: logger.New(logger.Options{
-			Prefix:               "je",
-			RemoteAddressHeaders: []string{"X-Forwarded-For"},
-		}),
+		router: router,
 	}
 
 	server.initRoutes()

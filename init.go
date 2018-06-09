@@ -2,28 +2,19 @@ package je
 
 import (
 	"fmt"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
 
-var db Store
+var (
+	db      Store
+	metrics *Metrics
+)
 
-type URI struct {
-	Type string
-	Path string
-}
+func InitMetrics(name string) *Metrics {
+	metrics = NewMetrics(name)
 
-func (u *URI) String() string {
-	return fmt.Sprintf("%s://%s", u.Type, u.Path)
-}
-
-func ParseURI(uri string) (*URI, error) {
-	parts := strings.Split(uri, "://")
-	if len(parts) == 2 {
-		return &URI{Type: strings.ToLower(parts[0]), Path: parts[1]}, nil
-	}
-	return nil, fmt.Errorf("invalid uri: %s", uri)
+	return metrics
 }
 
 func InitDB(uri string) (Store, error) {
