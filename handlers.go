@@ -207,7 +207,7 @@ func (s *Server) CreateHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		qs := r.URL.Query()
 
-		name := p.ByName("name")
+		name := strings.TrimPrefix(p.ByName("name"), "/")
 		if name == "" {
 			http.Error(w, "Bad Request", http.StatusBadRequest)
 			return

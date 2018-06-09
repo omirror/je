@@ -57,7 +57,7 @@ func (s *Server) Shutdown() {
 }
 
 func (s *Server) initRoutes() {
-	s.router.POST("/create/:name", s.CreateHandler())
+	s.router.POST("/create/*name", s.CreateHandler())
 	s.router.POST("/kill/:id", s.KillHandler())
 	s.router.GET("/logs/:id", s.LogsHandler())
 	s.router.GET("/output/:id", s.OutputHandler())
