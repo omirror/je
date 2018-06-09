@@ -15,19 +15,19 @@ pipeline:
     secrets: [ docker_username, docker_password ]
 
   notify:
-    email:
-      image: drillster/drone-email
-      host: mail.mills.io
-      from: drone@mills.io
-      skip_verify: true
-      secrets: [ email_username, email_password ]
-      when:
-        status: [ success, changed, failure ]
-    irc:
-      image: plugins/webhook
-      urls: https://msgbus.mills.io/ci.mills.io
-      when:
-        status: [ success, changed, failure ]
+    image: drillster/drone-email
+    host: mail.mills.io
+    from: drone@mills.io
+    skip_verify: true
+    secrets: [ email_username, email_password ]
+    when:
+      status: [ success, changed, failure ]
+
+  notify:
+    image: plugins/webhook
+    urls: https://msgbus.mills.io/ci.mills.io
+    when:
+      status: [ success, changed, failure ]
 
 secrets:
   email_username:
