@@ -20,7 +20,7 @@ dev: build
 deps:
 	@go get ./...
 
-build: clean deps
+build:
 	@echo " -> Building $(SERVER) $(TAG)$(BUILD) ..."
 	@cd cmd/$(SERVER) && \
 		go build -tags $(BUILD_TAGS) -installsuffix netgo \
