@@ -23,7 +23,7 @@ func InitMetrics(name string) *Metrics {
 		"server", "uptime",
 		"Number of nanoseconds the server has been running",
 		func() float64 {
-			return float64(time.Since(ctime).NanoSeconds())
+			return float64(time.Since(ctime).Nanoseconds())
 		},
 	)
 
