@@ -34,6 +34,12 @@ func InitMetrics(name string) *Metrics {
 		[]string{"method", "path"},
 	)
 
+	// job count counter
+	metrics.NewCounter(
+		"job", "count",
+		"Job count",
+	)
+
 	// job duration summary
 	metrics.NewSummaryVec(
 		"job", "duration",

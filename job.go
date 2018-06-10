@@ -45,6 +45,9 @@ func NewJob(name string, args []string, interactive bool) (job *Job, err error) 
 		done: make(chan bool, 1),
 	}
 	err = db.Save(job)
+	if err == nil {
+		metrics.Counter("job", "count").Inc()
+	}
 	return
 }
 
