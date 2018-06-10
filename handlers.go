@@ -15,6 +15,14 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// IndexHandler ...
+func (s *Server) IndexHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		w.Header().Set("Content-Type", "text/plain")
+		fmt.Fprintf(w, "Job Engine %s", FullVersion())
+	}
+}
+
 // SearchHandler ...
 func (s *Server) SearchHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {

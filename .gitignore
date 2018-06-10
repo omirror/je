@@ -1,6 +1,7 @@
 *~*
+log
 *.db
+data
 *.log
 *.bak
-data
 samples/hello
