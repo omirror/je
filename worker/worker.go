@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"fmt"
 	"io"
 	"sync"
 
@@ -10,24 +9,12 @@ import (
 	"github.com/rs/xid"
 )
 
-type Task interface {
-	Enqueue() error
-	Start(worker string) error
-	Stop() error
-	Kill(force bool) error
-	Killed() bool
-	Close() error
-	Write(input io.Reader) (int64, error)
-	Execute() error
-	Error(err error) error
-	Wait()
-}
-
+// Pool ...
 type Pool struct {
 	sync.RWMutex
 
 	size    int
-	tasks   chan Task
+	queue   Queue
 	kill    chan bool
 	wg      sync.WaitGroup
 	workers map[string]*Worker
@@ -35,7 +22,7 @@ type Pool struct {
 
 func NewPool(backlog, size int) *Pool {
 	pool := &Pool{
-		tasks:   make(chan Task, backlog),
+		queue:   NewChannelQueue(backlog),
 		kill:    make(chan bool),
 		workers: make(map[string]*Worker),
 	}
@@ -58,7 +45,7 @@ func (p *Pool) Resize(n int) {
 		p.wg.Add(1)
 		worker := NewWorker(xid.New().String())
 		p.workers[worker.Id()] = worker
-		go worker.Run(p.tasks, p.kill, p.wg)
+		go worker.Run(p.queue.Channel(), p.kill, p.wg)
 	}
 	for p.size > n {
 		p.size--
@@ -67,21 +54,16 @@ func (p *Pool) Resize(n int) {
 }
 
 func (p *Pool) Close() {
-	close(p.tasks)
+	p.queue.Close()
 }
 
 func (p *Pool) Wait() {
 	p.wg.Wait()
 }
 
-func (p *Pool) Submit(task Task) error {
-	select {
-	case p.tasks <- task:
-		task.Enqueue()
-		return nil
-	default:
-		return fmt.Errorf("all workers are busy")
-	}
+func (p *Pool) Submit(task Task) (err error) {
+	err = p.queue.Submit(task)
+	return
 }
 
 type Worker struct {
