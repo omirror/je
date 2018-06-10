@@ -17,12 +17,14 @@ import (
 
 const (
 	DefaultDataPath = "./data"
+	DefaultBacklog  = 32
 	DefaultThreads  = 16
 )
 
 // Options ...
 type Options struct {
 	Data    string
+	Backlog int
 	Threads int
 }
 
@@ -71,8 +73,15 @@ func (s *Server) initRoutes() {
 // NewServer ...
 func NewServer(bind string, options *Options) *Server {
 	var (
+		backlog int
 		threads int
 	)
+
+	if options != nil {
+		backlog = options.Backlog
+	} else {
+		backlog = DefaultBacklog
+	}
 
 	if options != nil {
 		threads = options.Threads
@@ -92,7 +101,7 @@ func NewServer(bind string, options *Options) *Server {
 		},
 
 		// Worker Pool
-		pool: worker.NewPool(threads),
+		pool: worker.NewPool(backlog, threads),
 
 		// Router
 		router: router,

@@ -33,9 +33,9 @@ type Pool struct {
 	workers map[string]*Worker
 }
 
-func NewPool(size int) *Pool {
+func NewPool(backlog, size int) *Pool {
 	pool := &Pool{
-		tasks:   make(chan Task),
+		tasks:   make(chan Task, backlog),
 		kill:    make(chan bool),
 		workers: make(map[string]*Worker),
 	}

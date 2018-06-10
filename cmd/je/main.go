@@ -25,6 +25,7 @@ func main() {
 		dburi   string
 		bind    string
 		threads int
+		backlog int
 	)
 
 	flag.BoolVar(&version, "v", false, "display version information")
@@ -34,6 +35,7 @@ func main() {
 	flag.StringVar(&dburi, "dburi", "memory://", "database to use")
 	flag.StringVar(&bind, "bind", "0.0.0.0:8000", "[int]:<port> to bind to")
 	flag.IntVar(&threads, "threads", runtime.NumCPU(), "worker threads")
+	flag.IntVar(&backlog, "backlog", runtime.NumCPU()*2, "backlog size")
 
 	flag.Parse()
 
@@ -55,6 +57,7 @@ func main() {
 	opts := &je.Options{
 		Data:    datadir,
 		Threads: threads,
+		Backlog: backlog,
 	}
 
 	metrics := je.InitMetrics("je")
