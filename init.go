@@ -21,9 +21,9 @@ func InitMetrics(name string) *Metrics {
 	// server uptime counter
 	metrics.NewCounterFunc(
 		"server", "uptime",
-		"Number of nanoseconds the server has been running",
+		"Number of seconds the server has been running",
 		func() float64 {
-			return float64(time.Since(ctime).Nanoseconds())
+			return time.Since(ctime).Seconds()
 		},
 	)
 
@@ -32,6 +32,19 @@ func InitMetrics(name string) *Metrics {
 		"server", "requests",
 		"Number of requests made to the server",
 		[]string{"method", "path"},
+	)
+
+	// job duration summary
+	metrics.NewSummaryVec(
+		"job", "duration",
+		"Job duration in seconds",
+		[]string{"name"},
+	)
+
+	// job index summary
+	metrics.NewSummary(
+		"job", "index",
+		"Index duration in seconds",
 	)
 
 	return metrics

@@ -83,6 +83,7 @@ func (j *Job) Kill(force bool) (err error) {
 		j.done <- true
 		j.State = STATE_KILLED
 		j.KilledAt = time.Now()
+		metrics.SummaryVec("job", "duration").WithLabelValues(j.Name).Observe(j.KilledAt.Sub(j.StartedAt).Seconds())
 		return db.Save(j)
 	}
 	return j.cmd.Process.Signal(os.Interrupt)
@@ -94,6 +95,7 @@ func (j *Job) Stop() error {
 	j.done <- true
 	j.State = STATE_STOPPED
 	j.StoppedAt = time.Now()
+	metrics.SummaryVec("job", "duration").WithLabelValues(j.Name).Observe(j.StoppedAt.Sub(j.StartedAt).Seconds())
 	return db.Save(j)
 }
 
@@ -102,6 +104,7 @@ func (j *Job) Error(err error) error {
 	defer j.Unlock()
 	j.State = STATE_ERRORED
 	j.ErroredAt = time.Now()
+	metrics.SummaryVec("job", "duration").WithLabelValues(j.Name).Observe(j.ErroredAt.Sub(j.StartedAt).Seconds())
 	return db.Save(j)
 }
 

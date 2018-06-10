@@ -34,7 +34,9 @@ func (store *MemoryStore) Save(job *Job) error {
 	store.data[job.ID] = job
 	store.Unlock()
 
+	t := time.Now()
 	store.index.Index(job.ID.String(), job)
+	metrics.Summary("job", "index").Observe(time.Now().Sub(t).Seconds())
 
 	return nil
 }
