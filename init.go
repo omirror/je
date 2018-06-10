@@ -53,6 +53,13 @@ func InitMetrics(name string) *Metrics {
 		"Index duration in seconds",
 	)
 
+	// job stats gauge
+	metrics.NewGaugeVec(
+		"job", "stats",
+		"Job stats by state",
+		[]string{"state"},
+	)
+
 	return metrics
 }
 

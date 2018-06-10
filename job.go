@@ -47,6 +47,7 @@ func NewJob(name string, args []string, interactive bool) (job *Job, err error) 
 	err = db.Save(job)
 	if err == nil {
 		metrics.Counter("job", "count").Inc()
+		metrics.GaugeVec("job", "stats").WithLabelValues("created", job.Name).Inc()
 	}
 	return
 }
@@ -61,6 +62,8 @@ func (j *Job) Enqueue() error {
 	j.Lock()
 	defer j.Unlock()
 	j.State = STATE_WAITING
+	metrics.GaugeVec("job", "stats").WithLabelValues("created", j.Name).Dec()
+	metrics.GaugeVec("job", "stats").WithLabelValues("waiting", j.Name).Inc()
 	return db.Save(j)
 }
 
@@ -70,6 +73,8 @@ func (j *Job) Start(worker string) error {
 	j.Worker = worker
 	j.State = STATE_RUNNING
 	j.StartedAt = time.Now()
+	metrics.GaugeVec("job", "stats").WithLabelValues("waiting", j.Name).Dec()
+	metrics.GaugeVec("job", "stats").WithLabelValues("running", j.Name).Inc()
 	return db.Save(j)
 }
 
@@ -87,6 +92,8 @@ func (j *Job) Kill(force bool) (err error) {
 		j.State = STATE_KILLED
 		j.KilledAt = time.Now()
 		metrics.SummaryVec("job", "duration").WithLabelValues(j.Name).Observe(j.KilledAt.Sub(j.StartedAt).Seconds())
+		metrics.GaugeVec("job", "stats").WithLabelValues("running", j.Name).Dec()
+		metrics.GaugeVec("job", "stats").WithLabelValues("killed", j.Name).Inc()
 		return db.Save(j)
 	}
 	return j.cmd.Process.Signal(os.Interrupt)
@@ -99,6 +106,8 @@ func (j *Job) Stop() error {
 	j.State = STATE_STOPPED
 	j.StoppedAt = time.Now()
 	metrics.SummaryVec("job", "duration").WithLabelValues(j.Name).Observe(j.StoppedAt.Sub(j.StartedAt).Seconds())
+	metrics.GaugeVec("job", "stats").WithLabelValues("running", j.Name).Dec()
+	metrics.GaugeVec("job", "stats").WithLabelValues("stopped", j.Name).Inc()
 	return db.Save(j)
 }
 
@@ -108,6 +117,8 @@ func (j *Job) Error(err error) error {
 	j.State = STATE_ERRORED
 	j.ErroredAt = time.Now()
 	metrics.SummaryVec("job", "duration").WithLabelValues(j.Name).Observe(j.ErroredAt.Sub(j.StartedAt).Seconds())
+	metrics.GaugeVec("job", "stats").WithLabelValues("running", j.Name).Dec()
+	metrics.GaugeVec("job", "stats").WithLabelValues("errored", j.Name).Inc()
 	return db.Save(j)
 }
 
