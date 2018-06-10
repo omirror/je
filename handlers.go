@@ -18,6 +18,7 @@ import (
 // IndexHandler ...
 func (s *Server) IndexHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		metrics.CounterVec("server", "requests").WithLabelValues("GET", "/").Add(1)
 		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprintf(w, "Job Engine %s", FullVersion())
 	}
@@ -30,6 +31,8 @@ func (s *Server) SearchHandler() httprouter.Handle {
 			err  error
 			jobs []*Job
 		)
+
+		metrics.CounterVec("server", "requests").WithLabelValues("GET", "/search").Add(1)
 
 		qs := r.URL.Query()
 
@@ -67,6 +70,8 @@ func (s *Server) SearchHandler() httprouter.Handle {
 // LogsHandler ...
 func (s *Server) LogsHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		metrics.CounterVec("server", "requests").WithLabelValues("GET", "/logs").Add(1)
+
 		qs := r.URL.Query()
 		id := ParseId(p.ByName("id"))
 
@@ -124,6 +129,8 @@ func (s *Server) LogsHandler() httprouter.Handle {
 // OutputHandler ...
 func (s *Server) OutputHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		metrics.CounterVec("server", "requests").WithLabelValues("GET", "/output").Add(1)
+
 		qs := r.URL.Query()
 		id := ParseId(p.ByName("id"))
 
@@ -182,6 +189,8 @@ func (s *Server) OutputHandler() httprouter.Handle {
 // KillHandler ...
 func (s *Server) KillHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		metrics.CounterVec("server", "requests").WithLabelValues("POST", "/kill").Add(1)
+
 		qs := r.URL.Query()
 		id := ParseId(p.ByName("id"))
 
@@ -213,6 +222,8 @@ func (s *Server) KillHandler() httprouter.Handle {
 // CreateHandler ...
 func (s *Server) CreateHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		metrics.CounterVec("server", "requests").WithLabelValues("POST", "/create").Add(1)
+
 		qs := r.URL.Query()
 
 		name := strings.TrimPrefix(p.ByName("name"), "/")
@@ -271,6 +282,8 @@ func (s *Server) CreateHandler() httprouter.Handle {
 // WriteHandler ...
 func (s *Server) WriteHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		metrics.CounterVec("server", "requests").WithLabelValues("POST", "/write").Add(1)
+
 		id := ParseId(p.ByName("id"))
 
 		if id <= 0 {
@@ -302,6 +315,8 @@ func (s *Server) WriteHandler() httprouter.Handle {
 // CloseHandler ...
 func (s *Server) CloseHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		metrics.CounterVec("server", "requests").WithLabelValues("POST", "/close").Add(1)
+
 		id := ParseId(p.ByName("id"))
 
 		if id <= 0 {

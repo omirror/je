@@ -27,6 +27,13 @@ func InitMetrics(name string) *Metrics {
 		},
 	)
 
+	// server requests counter
+	metrics.NewCounterVec(
+		"server", "requests",
+		"Number of requests made to the server",
+		[]string{"method", "path"},
+	)
+
 	return metrics
 }
 
