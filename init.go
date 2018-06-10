@@ -2,6 +2,7 @@ package je
 
 import (
 	"fmt"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -14,6 +15,17 @@ var (
 
 func InitMetrics(name string) *Metrics {
 	metrics = NewMetrics(name)
+
+	ctime := time.Now()
+
+	// server uptime counter
+	metrics.NewCounterFunc(
+		"server", "uptime",
+		"Number of nanoseconds the server has been running",
+		func() float64 {
+			return float64(time.Since(ctime).Nanoseconds())
+		},
+	)
 
 	return metrics
 }
