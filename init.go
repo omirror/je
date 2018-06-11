@@ -56,8 +56,8 @@ func InitMetrics(name string) *Metrics {
 	// job stats gauge
 	metrics.NewGaugeVec(
 		"job", "stats",
-		"Job stats by state and name",
-		[]string{"state", "name"},
+		"Job stats",
+		[]string{"id", "name", "state"},
 	)
 
 	return metrics
