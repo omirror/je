@@ -6,7 +6,7 @@ import (
 
 var (
 	// Version release version
-	Version = "0.2.1"
+	Version = "0.2.2"
 
 	// Build will be overwritten automatically by the build system
 	Build = "dev"
