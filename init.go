@@ -63,28 +63,32 @@ func InitMetrics(name string) *Metrics {
 	return metrics
 }
 
-func InitDB(data, database string) (Store, error) {
-	var err error
+func InitDB(uri string) (Store, error) {
+	u, err := ParseURI(uri)
+	if err != nil {
+		log.Errorf("error parsing db uri %s: %s", uri, err)
+		return nil, err
+	}
 
-	switch database {
+	switch u.Type {
 	case "memory":
 		db, err = NewMemoryStore()
 		if err != nil {
-			log.Errorf("error creating MemoryStore: %s", err)
+			log.Errorf("error creating store %s: %s", uri, err)
 			return nil, err
 		}
-		log.Info("Using MemoryStore")
+		log.Infof("Using MemoryStore %s", uri)
 		return db, nil
 	case "bolt":
-		db, err = NewBoltStore(data)
+		db, err = NewBoltStore(u.Path)
 		if err != nil {
-			log.Errorf("error creating BoltStore: %s", err)
+			log.Errorf("error creating store %s: %s", uri, err)
 			return nil, err
 		}
-		log.Info("Using BoltStore")
+		log.Infof("Using BoltStore %s", uri)
 		return db, nil
 	default:
-		err := fmt.Errorf("unsupported database: %s", database)
+		err := fmt.Errorf("unsupported db uri: %s", uri)
 		log.Error(err)
 		return nil, err
 	}
