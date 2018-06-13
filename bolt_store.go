@@ -2,6 +2,8 @@ package je
 
 import (
 	"encoding/binary"
+	"os"
+	"path"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -176,14 +178,20 @@ func (store *BoltStore) Search(q string) (jobs []*Job, err error) {
 	return
 }
 
-func NewBoltStore(path string) (Store, error) {
-	db, err := bolt.Open(path, 0644, &bolt.Options{})
+func NewBoltStore(dbpath string) (Store, error) {
+	db, err := bolt.Open(dbpath, 0644, &bolt.Options{})
 	if err != nil {
-		log.Errorf("error opening store %s: %s", path, err)
+		log.Errorf("error opening store %s: %s", dbpath, err)
 		return nil, err
 	}
 
-	index, err := bleve.NewMemOnly(bleve.NewIndexMapping())
+	var index bleve.Index
+	indexpath := path.Join(path.Dir(dbpath), "index.db")
+	if _, err = os.Stat(indexpath); err == nil {
+		index, err = bleve.Open(indexpath)
+	} else {
+		index, err = bleve.New(indexpath, bleve.NewIndexMapping())
+	}
 	if err != nil {
 		log.Errorf("error creating index: %s", err)
 		return nil, err
