@@ -196,7 +196,6 @@ func NewBoltStore(dbpath string) (Store, error) {
 		log.Errorf("error creating index: %s", err)
 		return nil, err
 	}
-	index = NewIndexBatcher(index, time.Millisecond*8)
 
 	return &BoltStore{
 		db:     db,
