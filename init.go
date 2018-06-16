@@ -53,37 +53,6 @@ func InitMetrics(name string) *Metrics {
 		"Index duration in seconds",
 	)
 
-	// job created gauge
-	metrics.NewGauge(
-		"job", "created",
-		"Number of jobs in a created state",
-	)
-	// job waiting gauge
-	metrics.NewGauge(
-		"job", "waiting",
-		"Number of jobs in a waiting state",
-	)
-	// job running gauge
-	metrics.NewGauge(
-		"job", "running",
-		"Number of jobs in a running state",
-	)
-	// job killed gauge
-	metrics.NewGauge(
-		"job", "killed",
-		"Number of jobs in a killed state",
-	)
-	// job stopped gauge
-	metrics.NewGauge(
-		"job", "stopped",
-		"Number of jobs in a stopped state",
-	)
-	// job errored gauge
-	metrics.NewGauge(
-		"job", "errored",
-		"Number of jobs in a errored state",
-	)
-
 	return metrics
 }
 

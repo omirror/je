@@ -47,7 +47,6 @@ func NewJob(name string, args []string, interactive bool) (job *Job, err error) 
 	err = db.Save(job)
 	if err == nil {
 		metrics.Counter("job", "count").Inc()
-		metrics.Gauge("job", "created").Inc()
 	}
 	return
 }
@@ -62,8 +61,6 @@ func (j *Job) Enqueue() error {
 	j.Lock()
 	defer j.Unlock()
 	j.State = STATE_WAITING
-	metrics.Gauge("job", "created").Dec()
-	metrics.Gauge("job", "waiting").Inc()
 	return db.Save(j)
 }
 
@@ -73,8 +70,6 @@ func (j *Job) Start(worker string) error {
 	j.Worker = worker
 	j.State = STATE_RUNNING
 	j.StartedAt = time.Now()
-	metrics.Gauge("job", "waiting").Dec()
-	metrics.Gauge("job", "running").Inc()
 	return db.Save(j)
 }
 
@@ -92,8 +87,6 @@ func (j *Job) Kill(force bool) (err error) {
 		j.State = STATE_KILLED
 		j.KilledAt = time.Now()
 		metrics.SummaryVec("job", "duration").WithLabelValues(j.Name).Observe(j.KilledAt.Sub(j.StartedAt).Seconds())
-		metrics.Gauge("job", "running").Dec()
-		metrics.Gauge("job", "killed").Inc()
 		return db.Save(j)
 	}
 	return j.cmd.Process.Signal(os.Interrupt)
@@ -106,8 +99,6 @@ func (j *Job) Stop() error {
 	j.State = STATE_STOPPED
 	j.StoppedAt = time.Now()
 	metrics.SummaryVec("job", "duration").WithLabelValues(j.Name).Observe(j.StoppedAt.Sub(j.StartedAt).Seconds())
-	metrics.Gauge("job", "running").Dec()
-	metrics.Gauge("job", "stopped").Inc()
 	return db.Save(j)
 }
 
@@ -117,8 +108,6 @@ func (j *Job) Error(err error) error {
 	j.State = STATE_ERRORED
 	j.ErroredAt = time.Now()
 	metrics.SummaryVec("job", "duration").WithLabelValues(j.Name).Observe(j.ErroredAt.Sub(j.StartedAt).Seconds())
-	metrics.Gauge("job", "running").Dec()
-	metrics.Gauge("job", "errored").Inc()
 	return db.Save(j)
 }
 
