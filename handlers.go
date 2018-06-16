@@ -233,7 +233,7 @@ func (s *Server) CreateHandler() httprouter.Handle {
 		}
 
 		args := strings.Fields(qs.Get("args"))
-		interactive := SafeParseInt(qs.Get("interactive"), 0) == 1
+		interactive := qs.Get("interactive") != ""
 
 		job, err := NewJob(name, args, interactive)
 		if err != nil {
@@ -251,6 +251,10 @@ func (s *Server) CreateHandler() httprouter.Handle {
 
 		n, err := io.Copy(input, r.Body)
 		log.Debugf("written %d bytes of input for job #%d", n, job.ID)
+		if cl := r.ContentLength; cl != 0 && cl < n {
+			// TODO: Bump a counter?
+			log.Warnf("not all bytes %d/%d of input written to job #%d", n, cl, job.ID)
+		}
 		if err != nil {
 			log.Errorf("error writing input for job #%d: %s", job.ID, err)
 		}
