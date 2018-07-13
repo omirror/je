@@ -14,7 +14,7 @@ Submits a new job of type `name` with the *optional* arguments `?args=...`.
 
 ## GET /search/:id
 
-Retrives informatoin about a job, its status, created and finished times and response.
+Retrieves information about a job, its status, created and finished times and response.
 
 * **Returns:** 200 OK
 
@@ -26,7 +26,7 @@ Returns all known jobs and their information.
 
 * **Returns:** 200 OK
 
-> Returns a JOSN array of all jobs as [`Job`](#job) objects.
+> Returns a JSON array of all jobs as [`Job`](#job) objects.
 
 # Appendix
 
