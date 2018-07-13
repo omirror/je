@@ -1,0 +1,135 @@
+[submodule "vendor/github.com/asdine/storm"]
+	path = vendor/github.com/asdine/storm
+	url = https://github.com/asdine/storm
+[submodule "vendor/github.com/stretchr/testify"]
+	path = vendor/github.com/stretchr/testify
+	url = https://github.com/stretchr/testify
+[submodule "vendor/github.com/unrolled/logger"]
+	path = vendor/github.com/unrolled/logger
+	url = https://github.com/unrolled/logger
+[submodule "vendor/github.com/julienschmidt/httprouter"]
+	path = vendor/github.com/julienschmidt/httprouter
+	url = https://github.com/julienschmidt/httprouter
+[submodule "vendor/github.com/coreos/bbolt"]
+	path = vendor/github.com/coreos/bbolt
+	url = https://github.com/coreos/bbolt
+[submodule "vendor/github.com/rs/xid"]
+	path = vendor/github.com/rs/xid
+	url = https://github.com/rs/xid
+[submodule "vendor/golang.org/x/sys"]
+	path = vendor/golang.org/x/sys
+	url = https://go.googlesource.com/sys
+[submodule "vendor/github.com/sirupsen/logrus"]
+	path = vendor/github.com/sirupsen/logrus
+	url = https://github.com/sirupsen/logrus
+[submodule "vendor/golang.org/x/crypto"]
+	path = vendor/golang.org/x/crypto
+	url = https://go.googlesource.com/crypto
+[submodule "vendor/github.com/blevesearch/bleve"]
+	path = vendor/github.com/blevesearch/bleve
+	url = https://github.com/blevesearch/bleve
+[submodule "vendor/github.com/RoaringBitmap/roaring"]
+	path = vendor/github.com/RoaringBitmap/roaring
+	url = https://github.com/RoaringBitmap/roaring
+[submodule "vendor/github.com/glycerine/go-unsnap-stream"]
+	path = vendor/github.com/glycerine/go-unsnap-stream
+	url = https://github.com/glycerine/go-unsnap-stream
+[submodule "vendor/github.com/golang/snappy"]
+	path = vendor/github.com/golang/snappy
+	url = https://github.com/golang/snappy
+[submodule "vendor/github.com/tinylib/msgp"]
+	path = vendor/github.com/tinylib/msgp
+	url = https://github.com/tinylib/msgp
+[submodule "vendor/github.com/philhofer/fwd"]
+	path = vendor/github.com/philhofer/fwd
+	url = https://github.com/philhofer/fwd
+[submodule "vendor/github.com/couchbase/vellum"]
+	path = vendor/github.com/couchbase/vellum
+	url = https://github.com/couchbase/vellum
+[submodule "vendor/github.com/edsrzf/mmap-go"]
+	path = vendor/github.com/edsrzf/mmap-go
+	url = https://github.com/edsrzf/mmap-go
+[submodule "vendor/github.com/boltdb/bolt"]
+	path = vendor/github.com/boltdb/bolt
+	url = https://github.com/boltdb/bolt
+[submodule "vendor/github.com/steveyen/gtreap"]
+	path = vendor/github.com/steveyen/gtreap
+	url = https://github.com/steveyen/gtreap
+[submodule "vendor/github.com/golang/protobuf"]
+	path = vendor/github.com/golang/protobuf
+	url = https://github.com/golang/protobuf
+[submodule "vendor/github.com/blevesearch/go-porterstemmer"]
+	path = vendor/github.com/blevesearch/go-porterstemmer
+	url = https://github.com/blevesearch/go-porterstemmer
+[submodule "vendor/github.com/blevesearch/segment"]
+	path = vendor/github.com/blevesearch/segment
+	url = https://github.com/blevesearch/segment
+[submodule "vendor/github.com/hpcloud/tail"]
+	path = vendor/github.com/hpcloud/tail
+	url = https://github.com/hpcloud/tail
+[submodule "vendor/github.com/prometheus/client_golang"]
+	path = vendor/github.com/prometheus/client_golang
+	url = https://github.com/prometheus/client_golang
+[submodule "vendor/github.com/beorn7/perks"]
+	path = vendor/github.com/beorn7/perks
+	url = https://github.com/beorn7/perks
+[submodule "vendor/github.com/prometheus/client_model"]
+	path = vendor/github.com/prometheus/client_model
+	url = https://github.com/prometheus/client_model
+[submodule "vendor/github.com/prometheus/common"]
+	path = vendor/github.com/prometheus/common
+	url = https://github.com/prometheus/common
+[submodule "vendor/github.com/matttproud/golang_protobuf_extensions"]
+	path = vendor/github.com/matttproud/golang_protobuf_extensions
+	url = https://github.com/matttproud/golang_protobuf_extensions
+[submodule "vendor/github.com/prometheus/procfs"]
+	path = vendor/github.com/prometheus/procfs
+	url = https://github.com/prometheus/procfs
+[submodule "vendor/github.com/mitchellh/go-homedir"]
+	path = vendor/github.com/mitchellh/go-homedir
+	url = https://github.com/mitchellh/go-homedir
+[submodule "vendor/github.com/spf13/cobra"]
+	path = vendor/github.com/spf13/cobra
+	url = https://github.com/spf13/cobra
+[submodule "vendor/github.com/spf13/pflag"]
+	path = vendor/github.com/spf13/pflag
+	url = https://github.com/spf13/pflag
+[submodule "vendor/github.com/spf13/viper"]
+	path = vendor/github.com/spf13/viper
+	url = https://github.com/spf13/viper
+[submodule "vendor/github.com/fsnotify/fsnotify"]
+	path = vendor/github.com/fsnotify/fsnotify
+	url = https://github.com/fsnotify/fsnotify
+[submodule "vendor/github.com/hashicorp/hcl"]
+	path = vendor/github.com/hashicorp/hcl
+	url = https://github.com/hashicorp/hcl
+[submodule "vendor/github.com/magiconair/properties"]
+	path = vendor/github.com/magiconair/properties
+	url = https://github.com/magiconair/properties
+[submodule "vendor/github.com/mitchellh/mapstructure"]
+	path = vendor/github.com/mitchellh/mapstructure
+	url = https://github.com/mitchellh/mapstructure
+[submodule "vendor/github.com/pelletier/go-toml"]
+	path = vendor/github.com/pelletier/go-toml
+	url = https://github.com/pelletier/go-toml
+[submodule "vendor/github.com/spf13/afero"]
+	path = vendor/github.com/spf13/afero
+	url = https://github.com/spf13/afero
+[submodule "vendor/golang.org/x/text"]
+	path = vendor/golang.org/x/text
+	url = https://go.googlesource.com/text
+[submodule "vendor/github.com/spf13/cast"]
+	path = vendor/github.com/spf13/cast
+	url = https://github.com/spf13/cast
+[submodule "vendor/github.com/spf13/jwalterweatherman"]
+	path = vendor/github.com/spf13/jwalterweatherman
+	url = https://github.com/spf13/jwalterweatherman
+[submodule "vendor/gopkg.in/yaml.v2"]
+	path = vendor/gopkg.in/yaml.v2
+	url = https://gopkg.in/yaml.v2
+[submodule "vendor/github.com/mmcloughlin/professor"]
+	path = vendor/github.com/mmcloughlin/professor
+	url = https://github.com/mmcloughlin/professor
+[submodule "vendor/gopkg.in/vmihailenco/msgpack.v2"]
+	path = vendor/gopkg.in/vmihailenco/msgpack.v2
+	url = https://gopkg.in/vmihailenco/msgpack.v2

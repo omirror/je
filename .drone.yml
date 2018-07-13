@@ -1,0 +1,40 @@
+workspace:
+  base: /go
+  path: src/git.mills.io/prologic/je
+
+pipeline:
+  build:
+    image: golang:latest
+    commands:
+      - make test
+
+  docker:
+    image: plugins/docker
+    repo: r.mills.io/prologic/je
+    registry: r.mills.io
+    secrets: [ docker_username, docker_password ]
+
+  notify:
+    image: drillster/drone-email
+    host: mail.mills.io
+    from: drone@mills.io
+    skip_verify: true
+    secrets: [ email_username, email_password ]
+    when:
+      status: [ success, changed, failure ]
+
+  notify:
+    image: plugins/webhook
+    urls: https://msgbus.mills.io/ci.mills.io
+    when:
+      status: [ success, changed, failure ]
+
+secrets:
+  email_username:
+    external: true
+  email_password:
+    external: true
+  registry_username:
+    external: true
+  registry_password:
+    external: true
