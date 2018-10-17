@@ -105,10 +105,24 @@ func (j *Job) Stop() error {
 func (j *Job) Error(err error) error {
 	j.Lock()
 	defer j.Unlock()
+	j.done <- true
 	j.State = STATE_ERRORED
 	j.ErroredAt = time.Now()
+	j.Log(err.Error())
 	metrics.SummaryVec("job", "duration").WithLabelValues(j.Name).Observe(j.ErroredAt.Sub(j.StartedAt).Seconds())
 	return db.Save(j)
+}
+
+func (j *Job) Log(msg string) error {
+	f, err := data.Write(j.ID, DATA_LOGS)
+	if err != nil {
+		log.Errorf("error creating logs for job #%s: %s", j.ID, err)
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.Write([]byte(msg))
+	return err
 }
 
 func (j *Job) Wait() {

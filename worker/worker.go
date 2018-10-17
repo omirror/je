@@ -123,11 +123,11 @@ func (w *Worker) Run(tasks chan Task, kill chan bool, wg sync.WaitGroup) {
 			if err != nil {
 				log.Errorf("error executing task: %s", err)
 				task.Error(err)
+			} else {
+				if !task.Killed() {
+					task.Stop()
+				}
 			}
-			if !task.Killed() {
-				task.Stop()
-			}
-
 		case <-kill:
 			return
 		}
