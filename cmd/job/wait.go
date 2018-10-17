@@ -87,7 +87,7 @@ func wait(client *client.Client, id string, interval, timeout time.Duration) int
 				return 0
 			}
 		case <-t2.C:
-			log.Errorf("timed out waiting for job #%d after %s", id, timeout)
+			log.Errorf("timed out waiting for job #%s after %s", id, timeout)
 			return 2
 		}
 	}
