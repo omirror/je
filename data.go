@@ -76,7 +76,7 @@ func (d *LocalData) Tail(id ID, dtype DataType, ctx context.Context) (lines chan
 		tail.Config{Follow: true},
 	)
 	if err != nil {
-		log.Errorf("error tailing output for job #%d: %s", err)
+		log.Errorf("error tailing output for job #%d: %s", id, err)
 		errors <- err
 		return
 	}
