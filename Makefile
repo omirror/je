@@ -10,7 +10,7 @@ TAG?=latest
 BUILD?=-dev
 
 BUILD_TAGS="netgo static_build"
-BUILD_LDFLAGS="-w -X git.mills.io/$(REPO).GitCommit=$(COMMIT) -X git.mills.io/$(REPO)/Build=$(BUILD)"
+BUILD_LDFLAGS="-w -X github.com/$(REPO).GitCommit=$(COMMIT) -X github.com/$(REPO)/Build=$(BUILD)"
 
 all: dev
 
@@ -44,7 +44,7 @@ bench:
 	@go test -v -bench ./...
 
 test:
-	@go test -v -cover -race ./...
+	@go test -v -cover -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... -race ./...
 
 clean:
 	@rm -rf $(APP)

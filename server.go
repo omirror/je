@@ -12,7 +12,7 @@ import (
 	// Routing
 	"github.com/julienschmidt/httprouter"
 
-	"git.mills.io/prologic/je/worker"
+	"github.com/prologic/je/worker"
 )
 
 const (

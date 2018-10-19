@@ -11,8 +11,8 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/coreos/bbolt"
 
-	"git.mills.io/prologic/je/codec"
-	"git.mills.io/prologic/je/codec/json"
+	"github.com/prologic/je/codec"
+	"github.com/prologic/je/codec/json"
 )
 
 func idToBytes(id ID) []byte {

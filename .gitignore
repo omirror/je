@@ -2,6 +2,8 @@
 log
 *.db
 data
+dist
+*.txt
 *.log
 *.bak
 cmd/je/je

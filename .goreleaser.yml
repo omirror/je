@@ -1,0 +1,41 @@
+builds:
+  - 
+    main: ./cmd/je/
+    binary: je
+    flags: -tags "static_build"
+    ldflags: -w -X je.Version={{.Version}} -X je.Commit={{.Commit}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - freebsd
+      - linux
+    goarch:
+      - i386
+      - amd64
+      - arm
+      - amd64
+    goarm:
+      - 6
+      - 7
+  - 
+    main: ./cmd/job/
+    binary: job
+    flags: -tags "static_build"
+    ldflags: -w -X je.Version={{.Version}} -X je.Commit={{.Commit}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - freebsd
+      - linux
+    goarch:
+      - i386
+      - amd64
+      - arm
+      - amd64
+    goarm:
+      - 6
+      - 7
+sign:
+  artifacts: checksum
