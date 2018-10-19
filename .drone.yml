@@ -1,6 +1,6 @@
 workspace:
   base: /go
-  path: src/git.mills.io/prologic/je
+  path: src/github.com/prologic/je
 
 pipeline:
   build:

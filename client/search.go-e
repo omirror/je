@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	"github.com/prologic/je"
+	"git.mills.io/prologic/je"
 )
 
 // SearchFilter ...

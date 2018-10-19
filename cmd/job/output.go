@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"git.mills.io/prologic/je/client"
+	"github.com/prologic/je/client"
 )
 
 // outputCmd represents the run command

@@ -13,7 +13,7 @@ import (
 
 	"github.com/mmcloughlin/professor"
 
-	"github.com/prologic/je"
+	"git.mills.io/prologic/je"
 )
 
 func main() {

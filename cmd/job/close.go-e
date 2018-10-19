@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -9,21 +8,22 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/prologic/je/client"
+	"git.mills.io/prologic/je/client"
 )
 
-// writeCmd represents the run command
-var writeCmd = &cobra.Command{
-	Use:     "write [flags] <id>",
-	Aliases: []string{"send"},
-	Short:   "Writes data to an interactive job",
-	Long: `This writes data from standard input to a running interactive job.
+// closeCmd represents the run command
+var closeCmd = &cobra.Command{
+	Use:     "close [flags] <id>",
+	Aliases: []string{"done"},
+	Short:   "Close the input of an interactive job",
+	Long: `This close the input stream of an interactive job.
 
 Normally jobs are not interactive meaning that they're stdin pipes are closed
 once written to from their input. You can keep the stdin of a job open
 indefiniately by using the -i/--interactive options of the run and start
 commands. With this option you can then write further input to the job(s)
-with the write command.`,
+with the write command. When finished you can explicitly close the stream
+by using the close command.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
@@ -31,22 +31,16 @@ with the write command.`,
 
 		id := args[0]
 
-		stat, _ := os.Stdin.Stat()
-		if (stat.Mode() & os.ModeCharDevice) == 0 {
-			os.Exit(write(client, id, os.Stdin))
-		} else {
-			log.Errorf("stdin is not a pipe")
-			os.Exit(1)
-		}
+		os.Exit(close(client, id))
 	},
 }
 
 func init() {
-	RootCmd.AddCommand(writeCmd)
+	RootCmd.AddCommand(closeCmd)
 }
 
-func write(client *client.Client, id string, input io.Reader) int {
-	err := client.Write(id, input)
+func close(client *client.Client, id string) int {
+	err := client.Close(id)
 	if err != nil {
 		log.Errorf("error writing to job #%s: %s", id, err)
 		return 1
