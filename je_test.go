@@ -25,12 +25,12 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	db, err := InitDB("memory://")
+	store, err := InitStore("memory://")
 	if err != nil {
 		log.Errorf("error initializing database: %s", err)
 		os.Exit(1)
 	}
-	defer db.Close()
+	defer store.Close()
 
 	InitMetrics("jetest")
 

@@ -1,40 +1,31 @@
 package je
 
+//go:generate rice embed-go
+
 import (
 	"context"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
 
-	// Logging
-	"github.com/unrolled/logger"
-
-	// Routing
 	"github.com/julienschmidt/httprouter"
-
 	"github.com/prologic/je/worker"
+	"github.com/unrolled/logger"
 )
-
-const (
-	DefaultDataPath = "./data"
-	DefaultBacklog  = 32
-	DefaultThreads  = 16
-)
-
-// Options ...
-type Options struct {
-	Data    string
-	Backlog int
-	Threads int
-}
 
 // Server ...
 type Server struct {
 	bind   string
 	server *http.Server
 
-	// Worker Pool
-	pool *worker.Pool
+	// Data
+	data Data
+
+	// Queue
+	queue Queue
+
+	// Store
+	store Store
 
 	// Router
 	router *httprouter.Router
@@ -46,6 +37,10 @@ type Server struct {
 // ListenAndServe ...
 func (s *Server) ListenAndServe() {
 	log.Fatal(s.server.ListenAndServe())
+}
+
+func (s *Server) GetWorker(id string) *worker.Worker {
+	return &worker.Worker{}
 }
 
 func (s *Server) AddRoute(method, path string, handler http.Handler) {
@@ -71,24 +66,7 @@ func (s *Server) initRoutes() {
 }
 
 // NewServer ...
-func NewServer(bind string, options *Options) *Server {
-	var (
-		backlog int
-		threads int
-	)
-
-	if options != nil {
-		backlog = options.Backlog
-	} else {
-		backlog = DefaultBacklog
-	}
-
-	if options != nil {
-		threads = options.Threads
-	} else {
-		threads = DefaultThreads
-	}
-
+func NewServer(bind string, data Data, queue Queue, store Store) *Server {
 	router := httprouter.New()
 
 	server := &Server{
@@ -100,10 +78,9 @@ func NewServer(bind string, options *Options) *Server {
 			}).Handler(router),
 		},
 
-		// Worker Pool
-		pool: worker.NewPool(backlog, threads),
-
-		// Router
+		data:   data,
+		queue:  queue,
+		store:  store,
 		router: router,
 	}
 

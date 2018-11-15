@@ -1,6 +1,8 @@
 package je
 
 import (
+	"strings"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/prologic/je/codec"
@@ -22,13 +24,14 @@ func NewMessageBusQueue(uri string) (*MessageBusQueue, error) {
 }
 
 func (q *MessageBusQueue) Publish(job *Job) error {
-	topic := job.Name
+	topic := strings.Trim(job.Type, "./")
 	message, err := q.codec.Marshal(job)
 	if err != nil {
 		log.Errorf("error marshalling job %d: %s", job.ID, err)
 		return err
 	}
 
+	log.Debugf("publishing to %s", topic)
 	return q.client.Publish(topic, string(message))
 }
 

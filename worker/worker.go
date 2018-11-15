@@ -1,17 +1,39 @@
 package worker
 
 import (
+	"encoding/json"
+	"fmt"
 	"io"
+	"net/http"
 	"sync"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/prologic/observe"
 	"github.com/rs/xid"
 )
 
-// Pool ...
-type Pool struct {
+const (
+	// DefaultBacklog ...
+	DefaultBacklog = 16
+
+	// DefaultSize ...
+	DefaultSize = 32
+)
+
+// Options ...
+type Options struct {
+	Backlog     int
+	Size        int
+	WithMetrics bool
+}
+
+// Boss ...
+type Boss struct {
 	sync.RWMutex
+
+	metrics *observe.Metrics
 
 	size    int
 	queue   Queue
@@ -20,52 +42,204 @@ type Pool struct {
 	workers map[string]*Worker
 }
 
-func NewPool(backlog, size int) *Pool {
-	pool := &Pool{
+// NewBoss ...
+func NewBoss(bind, logger, queue string, options *Options) *Boss {
+	var (
+		backlog     int
+		size        int
+		withMetrics bool
+	)
+
+	if options != nil {
+		backlog = options.Backlog
+		size = options.Size
+		withMetrics = options.WithMetrics
+	} else {
+		backlog = DefaultBacklog
+		size = DefaultSize
+		withMetrics = false
+	}
+
+	var metrics *observe.Metrics
+
+	if withMetrics {
+		metrics = observe.NewMetrics("je worker")
+
+		ctime := time.Now()
+
+		// worker uptime counter
+		metrics.NewCounterFunc(
+			"worker", "uptime",
+			"Number of nanoseconds the worker has been running",
+			func() float64 {
+				return float64(time.Since(ctime).Nanoseconds())
+			},
+		)
+
+		// worker requests counter
+		metrics.NewCounter(
+			"worker", "requests",
+			"Number of total requests processed",
+		)
+
+		/*
+			// client latency summary
+			metrics.NewSummary(
+				"client", "latency_seconds",
+				"Client latency in seconds",
+			)
+
+			// client errors counter
+			metrics.NewCounter(
+				"client", "errors",
+				"Number of errors publishing messages to clients",
+			)
+
+			// bus messages counter
+			metrics.NewCounter(
+				"bus", "messages",
+				"Number of total messages exchanged",
+			)
+
+			// bus dropped counter
+			metrics.NewCounter(
+				"bus", "dropped",
+				"Number of messages dropped to subscribers",
+			)
+
+			// bus delivered counter
+			metrics.NewCounter(
+				"bus", "delivered",
+				"Number of messages delivered to subscribers",
+			)
+
+			// bus fetched counter
+			metrics.NewCounter(
+				"bus", "fetched",
+				"Number of messages fetched from clients",
+			)
+
+			// bus topics gauge
+			metrics.NewCounter(
+				"bus", "topics",
+				"Number of active topics registered",
+			)
+
+			// queue len gauge vec
+			metrics.NewGaugeVec(
+				"queue", "len",
+				"Queue length of each topic",
+				[]string{"topic"},
+			)
+
+			// queue size gauge vec
+			// TODO: Implement this gauge by somehow getting queue sizes per topic!
+			metrics.NewGaugeVec(
+				"queue", "size",
+				"Queue length of each topic",
+				[]string{"topic"},
+			)
+
+			// bus subscribers gauge
+			metrics.NewGauge(
+				"bus", "subscribers",
+				"Number of active subscribers",
+			)
+		*/
+	}
+
+	boss := &Boss{
+		metrics: metrics,
+
 		queue:   NewChannelQueue(backlog),
 		kill:    make(chan bool),
 		workers: make(map[string]*Worker),
 	}
-	pool.Resize(size)
-	return pool
+	boss.Resize(size)
+	return boss
 }
 
-func (p *Pool) GetWorker(id string) *Worker {
-	p.RLock()
-	defer p.RUnlock()
+// GetWorker ...
+func (b *Boss) GetWorker(id string) *Worker {
+	b.RLock()
+	defer b.RUnlock()
 
-	return p.workers[id]
+	return b.workers[id]
 }
 
-func (p *Pool) Resize(n int) {
-	p.Lock()
-	defer p.Unlock()
-	for p.size < n {
-		p.size++
-		p.wg.Add(1)
+// Resize ...
+func (b *Boss) Resize(n int) {
+	b.Lock()
+	defer b.Unlock()
+	for b.size < n {
+		b.size++
+		b.wg.Add(1)
 		worker := NewWorker(xid.New().String())
-		p.workers[worker.Id()] = worker
-		go worker.Run(p.queue.Channel(), p.kill, p.wg)
+		b.workers[worker.ID()] = worker
+		go worker.Run(b.queue.Channel(), b.kill, b.wg)
 	}
-	for p.size > n {
-		p.size--
-		p.kill <- true
+	for b.size > n {
+		b.size--
+		b.kill <- true
 	}
 }
 
-func (p *Pool) Close() {
-	p.queue.Close()
+// Close ...
+func (b *Boss) Close() {
+	b.queue.Close()
 }
 
-func (p *Pool) Wait() {
-	p.wg.Wait()
+// Wait ...
+func (b *Boss) Wait() {
+	b.wg.Wait()
 }
 
-func (p *Pool) Submit(task Task) (err error) {
-	err = p.queue.Submit(task)
+func (b *Boss) Shutdown() {
+	b.Close()
+	b.Wait()
+}
+
+// Submit ...
+func (b *Boss) Submit(task Task) (err error) {
+	err = b.queue.Submit(task)
 	return
 }
 
+// Metrics ...
+func (b *Boss) Metrics() *observe.Metrics {
+	return b.metrics
+}
+
+// ServeHTTP ...
+func (b *Boss) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if b.metrics != nil {
+			b.metrics.Counter("server", "requests").Inc()
+		}
+	}()
+
+	if r.Method == "GET" && (r.URL.Path == "/" || r.URL.Path == "") {
+		out, err := json.Marshal(b.workers)
+		if err != nil {
+			msg := fmt.Sprintf("error serializing workers: %s", err)
+			http.Error(w, msg, http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	switch r.URL.Path {
+	case "/kill":
+	case "/close":
+		http.Error(w, "Not Implemented", http.StatusNotImplemented)
+	}
+}
+
+// Worker ...
 type Worker struct {
 	sync.RWMutex
 
@@ -73,17 +247,20 @@ type Worker struct {
 	task Task
 }
 
+// NewWorker ...
 func NewWorker(id string) *Worker {
 	return &Worker{id: id}
 }
 
-func (w *Worker) Id() string {
+// ID ...
+func (w *Worker) ID() string {
 	w.RLock()
 	defer w.RUnlock()
 
 	return w.id
 }
 
+// Kill ...
 func (w *Worker) Kill(force bool) error {
 	w.RLock()
 	defer w.RUnlock()
@@ -91,6 +268,7 @@ func (w *Worker) Kill(force bool) error {
 	return w.task.Kill(force)
 }
 
+// Close ...
 func (w Worker) Close() error {
 	w.RLock()
 	defer w.RUnlock()
@@ -98,6 +276,7 @@ func (w Worker) Close() error {
 	return w.task.Close()
 }
 
+// Write ...
 func (w *Worker) Write(input io.Reader) (int64, error) {
 	w.RLock()
 	defer w.RUnlock()
@@ -105,6 +284,7 @@ func (w *Worker) Write(input io.Reader) (int64, error) {
 	return w.task.Write(input)
 }
 
+// Run ...
 func (w *Worker) Run(tasks chan Task, kill chan bool, wg sync.WaitGroup) {
 	defer wg.Done()
 	for {
@@ -118,7 +298,7 @@ func (w *Worker) Run(tasks chan Task, kill chan bool, wg sync.WaitGroup) {
 			w.task = task
 			w.Unlock()
 
-			task.Start(w.Id())
+			task.Start(w.ID())
 			err := task.Execute()
 			if err != nil {
 				log.Errorf("error executing task: %s", err)

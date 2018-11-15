@@ -5,8 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -17,16 +18,10 @@ var configFile string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:     "job",
+	Use:     "je",
 	Version: je.FullVersion(),
-	Short:   "Command-line client for je",
-	Long: `This is the command-line client for the job execution daemon je.
-
-This lets you run jobs asynchronously and synchronously, inspect job status,
-output and logs and control their state.
-
-This is the reference implementation of using the je client library for
-running and accessing jobs`,
+	Short:   "Job Engine (je)",
+	Long:    "A self-sufficient distributed job execution engine.",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// set logging level
 		if viper.GetBool("debug") {
@@ -59,14 +54,6 @@ func init() {
 		"debug", "D", false,
 		"Enable debug logging",
 	)
-
-	RootCmd.PersistentFlags().StringP(
-		"uri", "u", "http://localhost:8000",
-		"URI to connect to the je api server",
-	)
-
-	viper.BindPFlag("uri", RootCmd.PersistentFlags().Lookup("uri"))
-	viper.SetDefault("uri", "http://localhost:8000/")
 
 	viper.BindPFlag("debug", RootCmd.PersistentFlags().Lookup("debug"))
 	viper.SetDefault("debug", false)

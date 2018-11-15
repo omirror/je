@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"sync"
 	"syscall"
 	"time"
@@ -17,6 +18,7 @@ type Job struct {
 	sync.RWMutex
 
 	ID          ID        `json:"id"`
+	Type        string    `json:"type"`
 	Name        string    `json:"name"`
 	Args        []string  `json:"args"`
 	Interactive bool      `json:"interactive"`
@@ -36,15 +38,16 @@ type Job struct {
 
 func NewJob(name string, args []string, interactive bool) (job *Job, err error) {
 	job = &Job{
-		ID:          db.NextId(),
-		Name:        name,
+		ID:          store.NextId(),
+		Type:        path.Dir(name),
+		Name:        path.Base(name),
 		Args:        args,
 		Interactive: interactive,
 		CreatedAt:   time.Now(),
 
 		done: make(chan bool, 1),
 	}
-	err = db.Save(job)
+	err = store.Save(job)
 	if err == nil {
 		metrics.Counter("job", "count").Inc()
 	}
@@ -61,7 +64,7 @@ func (j *Job) Enqueue() error {
 	j.Lock()
 	defer j.Unlock()
 	j.State = STATE_WAITING
-	return db.Save(j)
+	return store.Save(j)
 }
 
 func (j *Job) Start(worker string) error {
@@ -70,7 +73,7 @@ func (j *Job) Start(worker string) error {
 	j.Worker = worker
 	j.State = STATE_RUNNING
 	j.StartedAt = time.Now()
-	return db.Save(j)
+	return store.Save(j)
 }
 
 func (j *Job) Kill(force bool) (err error) {
@@ -87,7 +90,7 @@ func (j *Job) Kill(force bool) (err error) {
 		j.State = STATE_KILLED
 		j.KilledAt = time.Now()
 		metrics.SummaryVec("job", "duration").WithLabelValues(j.Name).Observe(j.KilledAt.Sub(j.StartedAt).Seconds())
-		return db.Save(j)
+		return store.Save(j)
 	}
 	return j.cmd.Process.Signal(os.Interrupt)
 }
@@ -99,7 +102,7 @@ func (j *Job) Stop() error {
 	j.State = STATE_STOPPED
 	j.StoppedAt = time.Now()
 	metrics.SummaryVec("job", "duration").WithLabelValues(j.Name).Observe(j.StoppedAt.Sub(j.StartedAt).Seconds())
-	return db.Save(j)
+	return store.Save(j)
 }
 
 func (j *Job) Error(err error) error {
@@ -110,7 +113,7 @@ func (j *Job) Error(err error) error {
 	j.ErroredAt = time.Now()
 	j.Log(err.Error())
 	metrics.SummaryVec("job", "duration").WithLabelValues(j.Name).Observe(j.ErroredAt.Sub(j.StartedAt).Seconds())
-	return db.Save(j)
+	return store.Save(j)
 }
 
 func (j *Job) Log(msg string) error {

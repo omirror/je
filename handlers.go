@@ -37,19 +37,19 @@ func (s *Server) SearchHandler() httprouter.Handle {
 		qs := r.URL.Query()
 
 		if id := ParseId(p.ByName("id")); id > 0 {
-			jobs, err = db.Find(id)
+			jobs, err = store.Find(id)
 			if err != nil {
 				http.Error(w, "Not Found", http.StatusNotFound)
 				return
 			}
 		} else if q := qs.Get("q"); q != "" {
-			jobs, err = db.Search(q)
+			jobs, err = store.Search(q)
 			if err != nil {
 				http.Error(w, "Not Found", http.StatusNotFound)
 				return
 			}
 		} else {
-			jobs, err = db.All()
+			jobs, err = store.All()
 			if err != nil {
 				http.Error(w, "Not Found", http.StatusNotFound)
 				return
@@ -80,7 +80,7 @@ func (s *Server) LogsHandler() httprouter.Handle {
 			return
 		}
 
-		job, err := db.Get(id)
+		job, err := store.Get(id)
 		if err != nil {
 			http.Error(w, "Not Found", http.StatusNotFound)
 			return
@@ -139,7 +139,7 @@ func (s *Server) OutputHandler() httprouter.Handle {
 			return
 		}
 
-		job, err := db.Get(id)
+		job, err := store.Get(id)
 		if err != nil {
 			http.Error(w, "Not Found", http.StatusNotFound)
 			return
@@ -199,13 +199,13 @@ func (s *Server) KillHandler() httprouter.Handle {
 			return
 		}
 
-		job, err := db.Get(id)
+		job, err := store.Get(id)
 		if err != nil {
 			http.Error(w, "Not Found", http.StatusNotFound)
 			return
 		}
 
-		worker := s.pool.GetWorker(job.Worker)
+		worker := s.GetWorker(job.Worker)
 		if worker == nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
@@ -264,7 +264,7 @@ func (s *Server) CreateHandler() httprouter.Handle {
 			log.Errorf("error closing input for job #%d: %s", job.ID, err)
 		}
 
-		err = s.pool.Submit(job)
+		err = s.queue.Publish(job)
 		if err != nil {
 			log.Errorf("error submitting job to pool: %s", err)
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
@@ -295,13 +295,13 @@ func (s *Server) WriteHandler() httprouter.Handle {
 			return
 		}
 
-		job, err := db.Get(id)
+		job, err := store.Get(id)
 		if err != nil {
 			http.Error(w, "Not Found", http.StatusNotFound)
 			return
 		}
 
-		worker := s.pool.GetWorker(job.Worker)
+		worker := s.GetWorker(job.Worker)
 		if worker == nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
@@ -328,13 +328,13 @@ func (s *Server) CloseHandler() httprouter.Handle {
 			return
 		}
 
-		job, err := db.Get(id)
+		job, err := store.Get(id)
 		if err != nil {
 			http.Error(w, "Not Found", http.StatusNotFound)
 			return
 		}
 
-		worker := s.pool.GetWorker(job.Worker)
+		worker := s.GetWorker(job.Worker)
 		if worker == nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return

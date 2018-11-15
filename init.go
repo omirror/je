@@ -2,13 +2,16 @@ package je
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 )
 
 var (
-	db      Store
+	queue   Queue
+	store   Store
 	data    Data
 	metrics *Metrics
 )
@@ -56,37 +59,64 @@ func InitMetrics(name string) *Metrics {
 	return metrics
 }
 
-func InitDB(uri string) (Store, error) {
-	u, err := ParseURI(uri)
+func InitQueue(uri string) (Queue, error) {
+	u, err := url.Parse(uri)
 	if err != nil {
-		log.Errorf("error parsing db uri %s: %s", uri, err)
+		log.Errorf("error parsing queue uri %s: %s", uri, err)
 		return nil, err
 	}
 
-	switch u.Type {
-	case "memory":
-		db, err = NewMemoryStore()
+	xs := strings.Split(u.Scheme, "+")
+	u.Scheme = xs[1]
+
+	switch xs[0] {
+	case "msgbus":
+		queue, err = NewMessageBusQueue(u.String())
 		if err != nil {
-			log.Errorf("error creating store %s: %s", uri, err)
+			log.Errorf("error creating queue %s: %s", uri, err)
 			return nil, err
 		}
-		log.Infof("Using MemoryStore %s", uri)
-		return db, nil
-	case "bolt":
-		db, err = NewBoltStore(u.Path)
-		if err != nil {
-			log.Errorf("error creating store %s: %s", uri, err)
-			return nil, err
-		}
-		log.Infof("Using BoltStore %s", uri)
-		return db, nil
+		log.Infof("Using MessageBusQueue %s", uri)
+		return queue, nil
 	default:
-		err := fmt.Errorf("unsupported db uri: %s", uri)
+		err := fmt.Errorf("unsupported queue uri: %s", uri)
 		log.Error(err)
 		return nil, err
 	}
 }
 
+func InitStore(uri string) (Store, error) {
+	u, err := ParseURI(uri)
+	if err != nil {
+		log.Errorf("error parsing store uri %s: %s", uri, err)
+		return nil, err
+	}
+
+	switch u.Type {
+	case "memory":
+		store, err = NewMemoryStore()
+		if err != nil {
+			log.Errorf("error creating store %s: %s", uri, err)
+			return nil, err
+		}
+		log.Infof("Using MemoryStore %s", uri)
+		return store, nil
+	case "bolt":
+		store, err = NewBoltStore(u.Path)
+		if err != nil {
+			log.Errorf("error creating store %s: %s", uri, err)
+			return nil, err
+		}
+		log.Infof("Using BoltStore %s", uri)
+		return store, nil
+	default:
+		err := fmt.Errorf("unsupported store uri: %s", uri)
+		log.Error(err)
+		return nil, err
+	}
+}
+
+// InitData returns a new Data object for persisting job logs and input
 func InitData(path string) (Data, error) {
 	var err error
 
