@@ -321,29 +321,62 @@ func (s *Server) WriteHandler() httprouter.Handle {
 		metrics.CounterVec("server", "requests").WithLabelValues("POST", "/write").Inc()
 
 		id := ParseId(p.ByName("id"))
+		dtype := DataType(SafeParseInt(p.ByName("dtype"), int(DATA_INPUT)))
 
 		if id <= 0 {
 			http.Error(w, "Bad Request", http.StatusBadRequest)
 			return
 		}
 
+		if dtype != DATA_INPUT || dtype != DATA_OUTPUT || dtype != DATA_LOGS {
+			msg := fmt.Sprintf("unexpected data type %d", dtype)
+			log.Error(msg)
+			http.Error(w, msg, http.StatusBadRequest)
+			return
+		}
+
 		job, err := store.Get(id)
 		if err != nil {
-			http.Error(w, "Not Found", http.StatusNotFound)
+			msg := fmt.Sprintf("no such job #%d", id)
+			log.Error(msg)
+			http.Error(w, msg, http.StatusNotFound)
 			return
 		}
 
-		worker := s.GetWorker(job.Worker)
-		if worker == nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
+		if dtype == DATA_INPUT {
+			worker := s.GetWorker(job.Worker)
+			if worker == nil {
+				msg := fmt.Sprintf("worker %s for job #%d not found", id, job.Worker)
+				log.Error(msg)
+				http.Error(w, msg, http.StatusInternalServerError)
+				return
+			}
 
-		// TODO: WHat if n < len(r.Body)?
-		_, err = worker.Write(r.Body)
-		if err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
+			// TODO: WHat if n < len(r.Body)?
+			_, err = worker.Write(r.Body)
+			if err != nil {
+				msg := fmt.Sprintf("error writing to job #%d's input: %s", id, err)
+				log.Error(err)
+				http.Error(w, msg, http.StatusInternalServerError)
+				return
+			}
+		} else {
+			buf, err := data.Write(id, dtype)
+			if err != nil {
+				msg := fmt.Sprintf("error writing to job #%d with dtype %d: %s", id, dtype, err)
+				log.Error(msg)
+				http.Error(w, msg, http.StatusInternalServerError)
+				return
+			}
+
+			_, err = io.Copy(buf, r.Body)
+			// TODO" Deal with less bytes written than expected
+			if err != nil {
+				msg := fmt.Sprintf("error writing to job #%d with dtype %d: %s", id, dtype, err)
+				log.Error(msg)
+				http.Error(w, msg, http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 }

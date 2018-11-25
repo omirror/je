@@ -46,7 +46,7 @@ func init() {
 }
 
 func write(client *je.Client, id string, input io.Reader) int {
-	err := client.Write(id, input)
+	err := client.Write(id, je.DATA_INPUT.String(), input)
 	if err != nil {
 		log.Errorf("error writing to job #%s: %s", id, err)
 		return 1

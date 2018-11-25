@@ -250,8 +250,8 @@ func (c *Client) Read(id string) (r io.ReadCloser, err error) {
 }
 
 // Write ...
-func (c *Client) Write(id string, input io.Reader) (err error) {
-	url := fmt.Sprintf("%s/write/%s", c.url, id)
+func (c *Client) Write(id, dtype string, input io.Reader) (err error) {
+	url := fmt.Sprintf("%s/write/%s/%s", c.url, id, dtype)
 	_, err = c.request("POST", url, input)
 	return
 }

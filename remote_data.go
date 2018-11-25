@@ -47,7 +47,7 @@ func (d *RemoteData) Write(id ID, dtype DataType) (io.WriteCloser, error) {
 	w := WriteCloseBuffer{bufio.NewWriter(r)}
 
 	go func() {
-		err := d.client.Write(id.String(), r)
+		err := d.client.Write(id.String(), dtype.String(), r)
 		if err != nil {
 			log.Errorf("error writing data to #%d: %s", id, err)
 		}
