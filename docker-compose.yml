@@ -1,0 +1,37 @@
+version: "3.3"
+
+services:
+  server:
+    build: .
+    image: je
+    command: daemon -d /data -q msgbus+http://msgbus:8000/ -D
+    ports:
+      - "8000:8000/tcp"
+    networks:
+      - msgbus
+    volumes:
+      - je:/data
+
+  worker:
+    build: .
+    image: je
+    command: worker -q msgbus+http://msgbus:8000/ -l msgbus+http://msgbus:8000/ -D
+    ports:
+      - "9000:9000/tcp"
+    networks:
+      - msgbus
+
+  msgbus:
+    image: prologic/msgbus:latest
+    ports:
+      - "8001:8000/tcp"
+    networks:
+      - msgbus
+
+networks:
+  msgbus:
+    driver: bridge
+
+volumes:
+  je:
+    driver: local

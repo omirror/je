@@ -67,7 +67,9 @@ func InitQueue(uri string) (Queue, error) {
 	}
 
 	xs := strings.Split(u.Scheme, "+")
-	u.Scheme = xs[1]
+	if len(xs) == 2 {
+		u.Scheme = xs[1]
+	}
 
 	switch xs[0] {
 	case "msgbus":
@@ -86,13 +88,18 @@ func InitQueue(uri string) (Queue, error) {
 }
 
 func InitStore(uri string) (Store, error) {
-	u, err := ParseURI(uri)
+	u, err := url.Parse(uri)
 	if err != nil {
 		log.Errorf("error parsing store uri %s: %s", uri, err)
 		return nil, err
 	}
 
-	switch u.Type {
+	xs := strings.Split(u.Scheme, "+")
+	if len(xs) == 2 {
+		u.Scheme = xs[1]
+	}
+
+	switch xs[0] {
 	case "memory":
 		store, err = NewMemoryStore()
 		if err != nil {
@@ -102,12 +109,21 @@ func InitStore(uri string) (Store, error) {
 		log.Infof("Using MemoryStore %s", uri)
 		return store, nil
 	case "bolt":
-		store, err = NewBoltStore(u.Path)
+		path := fmt.Sprintf("%s%s", u.Hostname(), u.EscapedPath())
+		store, err = NewBoltStore(path)
 		if err != nil {
 			log.Errorf("error creating store %s: %s", uri, err)
 			return nil, err
 		}
-		log.Infof("Using BoltStore %s", uri)
+		log.Infof("Using BoltStore %s", path)
+		return store, nil
+	case "je":
+		store, err = NewRemoteStore(u.String())
+		if err != nil {
+			log.Errorf("error creating store %s: %s", uri, err)
+			return nil, err
+		}
+		log.Infof("Using RemoteStore %s", u.String())
 		return store, nil
 	default:
 		err := fmt.Errorf("unsupported store uri: %s", uri)
@@ -117,10 +133,39 @@ func InitStore(uri string) (Store, error) {
 }
 
 // InitData returns a new Data object for persisting job logs and input
-func InitData(path string) (Data, error) {
-	var err error
+func InitData(uri string) (Data, error) {
+	u, err := url.Parse(uri)
+	if err != nil {
+		log.Errorf("error parsing data uri %s: %s", uri, err)
+		return nil, err
+	}
 
-	data, err = NewLocalData(path)
+	xs := strings.Split(u.Scheme, "+")
+	if len(xs) == 2 {
+		u.Scheme = xs[1]
+	}
 
-	return data, err
+	switch xs[0] {
+	case "file":
+		path := fmt.Sprintf("%s%s", u.Hostname(), u.EscapedPath())
+		data, err = NewLocalData(path)
+		if err != nil {
+			log.Errorf("error creating data %s: %s", path, err)
+			return nil, err
+		}
+		log.Infof("Using LocalData %s", path)
+		return data, nil
+	case "je":
+		data, err = NewRemoteData(u.String())
+		if err != nil {
+			log.Errorf("error creating store %s: %s", uri, err)
+			return nil, err
+		}
+		log.Infof("Using RemoteData %s", u.String())
+		return data, nil
+	default:
+		err := fmt.Errorf("unsupported data uri: %s", uri)
+		log.Error(err)
+		return nil, err
+	}
 }

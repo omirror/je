@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/prologic/je"
-	"github.com/prologic/je/client"
 )
 
 // psCmd represents the run command
@@ -23,7 +22,7 @@ var psCmd = &cobra.Command{
 	Long:    `This list all actively running jobs in a ps-like output`,
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
-		client := client.NewClient(uri, nil)
+		client := je.NewClient(uri, nil)
 
 		os.Exit(ps(client))
 	},
@@ -33,9 +32,9 @@ func init() {
 	RootCmd.AddCommand(psCmd)
 }
 
-func ps(c *client.Client) int {
-	res, err := c.Search(&client.SearchOptions{
-		Filter: &client.SearchFilter{
+func ps(c *je.Client) int {
+	res, err := c.Search(&je.SearchOptions{
+		Filter: &je.SearchFilter{
 			State: je.STATE_RUNNING.String(),
 		},
 	})
@@ -79,7 +78,7 @@ func ps(c *client.Client) int {
 					"%d\t%s\t%s\t%s\t%s (%s)\t%s\n",
 					job.ID,
 					job.Name,
-					client.JoinArgs(job.Args),
+					je.JoinArgs(job.Args),
 					created,
 					job.State.String(),
 					running,

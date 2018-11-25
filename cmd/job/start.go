@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/prologic/je/client"
+	"github.com/prologic/je"
 )
 
 // startCmd represents the run command
@@ -29,7 +29,7 @@ to pass stadard input to the job.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
-		client := client.NewClient(uri, nil)
+		client := je.NewClient(uri, nil)
 
 		interactive, err := cmd.Flags().GetBool("interactive")
 		if err != nil {
@@ -66,7 +66,7 @@ func init() {
 	)
 }
 
-func start(client *client.Client, name string, args []string, input io.Reader, interactive, quiet bool) int {
+func start(client *je.Client, name string, args []string, input io.Reader, interactive, quiet bool) int {
 	res, err := client.Create(name, args, input, interactive, false)
 	if err != nil {
 		log.Errorf("error running job %s: %s", name, err)

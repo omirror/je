@@ -25,7 +25,7 @@ build:
 	@cd cmd/$(SERVER) && \
 		go build -tags $(BUILD_TAGS) -installsuffix netgo \
 		-ldflags $(BUILD_LDFLAGS) .
-	@echo "Built $$(./cmd/$(SERVER)/$(SERVER) -v)"
+	@echo "Built $$(./cmd/$(SERVER)/$(SERVER) --version)"
 	@echo
 	@echo " -> Building $(CLIENT) $(TAG)$(BUILD) ..."
 	@cd cmd/$(CLIENT) && \

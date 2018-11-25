@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/prologic/je/client"
+	"github.com/prologic/je"
 )
 
 // infoCmd represents the run command
@@ -22,7 +22,7 @@ var infoCmd = &cobra.Command{
 	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
-		client := client.NewClient(uri, nil)
+		client := je.NewClient(uri, nil)
 
 		id := args[0]
 
@@ -34,7 +34,7 @@ func init() {
 	RootCmd.AddCommand(infoCmd)
 }
 
-func info(c *client.Client, id string) int {
+func info(c *je.Client, id string) int {
 	res, err := c.GetJobByID(id)
 	if err != nil {
 		log.Errorf("error retrieving information for job #%s: %s", id, err)

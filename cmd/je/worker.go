@@ -4,21 +4,26 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/prologic/je"
-	"github.com/prologic/je/worker"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var workerCmd = &cobra.Command{
-	Use:     "worker",
+	Use:     "worker [jobtype]",
 	Aliases: []string{"agent", "minion"},
 	Short:   "Run the worker agent",
 	Long: `This runs the worker daemon that listens for new jobs on a queue,
-processes them concurrently and sends results back to the logger.`,
+processes them concurrently and sends results back to the logger. The worker
+by default listens for jobs on a glocal topic called * -- Workers can be
+packaged and configured to operate and run specific job types by specifying
+the type of jobs as the [jobtype] argument.`,
+	Args:      cobra.MaximumNArgs(1),
+	ValidArgs: []string{"jobtype"},
 	Run: func(cmd *cobra.Command, args []string) {
 		os.Exit(runWorker(cmd, args...))
 	},
@@ -28,18 +33,37 @@ func init() {
 	RootCmd.AddCommand(workerCmd)
 
 	workerCmd.Flags().StringP(
-		"bind", "b", ":32436",
+		"bind", "b", ":9000",
 		"[int]:<port> to bind to",
 	)
 
 	workerCmd.Flags().StringP(
-		"logger", "l", "je+http://localhost:10706/",
+		"data", "d", "je+http://localhost:8000/",
+		"where to persist job data",
+	)
+
+	workerCmd.Flags().StringP(
+		"logger", "l", "msgbus+http://localhost:8001/",
+		"logger to use to send log streams",
+	)
+
+	workerCmd.Flags().StringP(
+		"queue", "q", "msgbus+http://localhost:8001/",
 		"message queue to use for subscribing to jobs and publishing results",
 	)
 
 	workerCmd.Flags().StringP(
-		"queue", "q", "msgbus+http://localhost:58050/",
-		"message queue to use for subscribing to jobs and publishing results",
+		"store", "s", "je+http://localhost:8000/",
+		"database store to persist job metadata",
+	)
+
+	workerCmd.Flags().IntP(
+		"workers", "W", runtime.NumCPU(),
+		"number of workers",
+	)
+	workerCmd.Flags().IntP(
+		"buffer", "B", runtime.NumCPU()*2,
+		"number of work items to buffer",
 	)
 }
 
@@ -51,6 +75,12 @@ func runWorker(cmd *cobra.Command, args ...string) int {
 	bind, err := cmd.Flags().GetString("bind")
 	if err != nil {
 		log.Errorf("error getting -b/--bind flag: %s", err)
+		return 1
+	}
+
+	dataURI, err := cmd.Flags().GetString("data")
+	if err != nil {
+		log.Errorf("error getting -d/--data flag: %s", err)
 		return 1
 	}
 
@@ -66,25 +96,59 @@ func runWorker(cmd *cobra.Command, args ...string) int {
 		return 1
 	}
 
+	storeURI, err := cmd.Flags().GetString("store")
+	if err != nil {
+		log.Errorf("error getting -s/--store flag: %s", err)
+		return 1
+	}
+
+	workers, err := cmd.Flags().GetInt("workers")
+	if err != nil {
+		log.Errorf("error getting -W/--workers flag: %s", err)
+		return 1
+	}
+
+	buffer, err := cmd.Flags().GetInt("buffer")
+	if err != nil {
+		log.Errorf("error getting -B/--buffer flag: %s", err)
+		return 1
+	}
+
+	jobType := "*"
+	if len(args) == 1 {
+		jobType = args[0]
+	}
+
 	if debug {
 		log.SetLevel(log.DebugLevel)
 	} else {
 		log.SetLevel(log.InfoLevel)
 	}
 
-	queue, err := je.InitQueue(queueURI)
+	_, err = je.InitData(dataURI)
+	if err != nil {
+		log.Errorf("error initializing data: %s", err)
+		return 1
+	}
+
+	store, err := je.InitStore(storeURI)
 	if err != nil {
 		log.Errorf("error initializing store: %s", err)
 		return 1
 	}
-	defer queue.Close()
+	defer store.Close()
 
-	opts := worker.Options{}
-	boss := worker.NewBoss(bind, loggerURI, queueURI, &opts)
+	opts := je.BossOptions{
+		JobType: jobType,
+		Workers: workers,
+		Buffer:  buffer,
+	}
+	boss := je.NewBoss(bind, loggerURI, queueURI, &opts)
 
 	http.Handle("/", boss)
 	http.Handle("/metrics", boss.Metrics().Handler())
 	log.Infof("je worker %s listening on %s", je.FullVersion(), bind)
+	log.Infof("operating on jobs of type: %s", jobType)
 	log.Fatal(http.ListenAndServe(bind, nil))
 
 	sigint := make(chan os.Signal, 1)

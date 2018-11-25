@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/prologic/je/client"
+	"github.com/prologic/je"
 )
 
 // closeCmd represents the run command
@@ -27,7 +27,7 @@ by using the close command.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
-		client := client.NewClient(uri, nil)
+		client := je.NewClient(uri, nil)
 
 		id := args[0]
 
@@ -39,7 +39,7 @@ func init() {
 	RootCmd.AddCommand(closeCmd)
 }
 
-func close(client *client.Client, id string) int {
+func close(client *je.Client, id string) int {
 	err := client.Close(id)
 	if err != nil {
 		log.Errorf("error writing to job #%s: %s", id, err)

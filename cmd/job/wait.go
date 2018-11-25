@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/prologic/je"
-	"github.com/prologic/je/client"
 )
 
 // waitCmd represents the run command
@@ -24,7 +23,7 @@ displaying the job's exit status`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
-		client := client.NewClient(uri, nil)
+		client := je.NewClient(uri, nil)
 
 		interval, err := cmd.Flags().GetDuration("interval")
 		if err != nil {
@@ -58,7 +57,7 @@ func init() {
 	)
 }
 
-func wait(client *client.Client, id string, interval, timeout time.Duration) int {
+func wait(client *je.Client, id string, interval, timeout time.Duration) int {
 	res, err := client.GetJobByID(id)
 	if err != nil {
 		log.Errorf("error retrieving information for job #%s: %s", id, err)

@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/prologic/je/client"
+	"github.com/prologic/je"
 )
 
 // killCmd represents the run command
@@ -22,7 +22,7 @@ instead forcing the job to terminate uncleanly.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
-		client := client.NewClient(uri, nil)
+		client := je.NewClient(uri, nil)
 
 		id := args[0]
 
@@ -45,7 +45,7 @@ func init() {
 	)
 }
 
-func kill(c *client.Client, id string, force bool) int {
+func kill(c *je.Client, id string, force bool) int {
 	err := c.Kill(id, force)
 	if err != nil {
 		log.Errorf("error retrieving information for job #%s: %s", id, err)

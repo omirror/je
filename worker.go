@@ -1,4 +1,4 @@
-package worker
+package je
 
 import (
 	"encoding/json"
@@ -10,22 +10,28 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/prologic/msgbus"
+	"github.com/prologic/msgbus/client"
 	"github.com/prologic/observe"
 	"github.com/rs/xid"
 )
 
 const (
-	// DefaultBacklog ...
-	DefaultBacklog = 16
+	// DefaultBuffer ...
+	DefaultBuffer = 16
 
-	// DefaultSize ...
-	DefaultSize = 32
+	// DefaultWorkers ...
+	DefaultWorkers = 32
+
+	// DefaultJobType ...
+	DefaultJobType = "*"
 )
 
-// Options ...
-type Options struct {
-	Backlog     int
-	Size        int
+// BossOptions ...
+type BossOptions struct {
+	Buffer      int
+	Workers     int
+	JobType     string
 	WithMetrics bool
 }
 
@@ -35,28 +41,37 @@ type Boss struct {
 
 	metrics *observe.Metrics
 
+	subscriber   *client.Subscriber
+	loggerClient *client.Client
+	queueClient  *client.Client
+
+	jobType string
+
 	size    int
-	queue   Queue
+	queue   *TaskQueue
 	kill    chan bool
 	wg      sync.WaitGroup
 	workers map[string]*Worker
 }
 
 // NewBoss ...
-func NewBoss(bind, logger, queue string, options *Options) *Boss {
+func NewBoss(bind, logger, queue string, options *BossOptions) *Boss {
 	var (
-		backlog     int
-		size        int
+		buffer      int
+		workers     int
+		jobType     string
 		withMetrics bool
 	)
 
 	if options != nil {
-		backlog = options.Backlog
-		size = options.Size
+		buffer = options.Buffer
+		workers = options.Workers
+		jobType = options.JobType
 		withMetrics = options.WithMetrics
 	} else {
-		backlog = DefaultBacklog
-		size = DefaultSize
+		buffer = DefaultBuffer
+		workers = DefaultWorkers
+		jobType = DefaultJobType
 		withMetrics = false
 	}
 
@@ -151,11 +166,18 @@ func NewBoss(bind, logger, queue string, options *Options) *Boss {
 	boss := &Boss{
 		metrics: metrics,
 
-		queue:   NewChannelQueue(backlog),
+		subscriber:   nil,
+		queueClient:  client.NewClient(queue, nil),
+		loggerClient: client.NewClient(logger, nil),
+
+		jobType: jobType,
+
+		queue:   NewTaskQueue(buffer),
 		kill:    make(chan bool),
 		workers: make(map[string]*Worker),
 	}
-	boss.Resize(size)
+	boss.Resize(workers)
+	boss.Start()
 	return boss
 }
 
@@ -165,6 +187,12 @@ func (b *Boss) GetWorker(id string) *Worker {
 	defer b.RUnlock()
 
 	return b.workers[id]
+}
+
+// Start ...
+func (b *Boss) Start() {
+	b.subscriber = b.queueClient.Subscribe(b.jobType, b.handleMessage)
+	b.subscriber.Start()
 }
 
 // Resize ...
@@ -186,6 +214,7 @@ func (b *Boss) Resize(n int) {
 
 // Close ...
 func (b *Boss) Close() {
+	b.subscriber.Stop()
 	b.queue.Close()
 }
 
@@ -197,6 +226,9 @@ func (b *Boss) Wait() {
 func (b *Boss) Shutdown() {
 	b.Close()
 	b.Wait()
+}
+
+func (b *Boss) Run() {
 }
 
 // Submit ...
@@ -237,6 +269,22 @@ func (b *Boss) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/close":
 		http.Error(w, "Not Implemented", http.StatusNotImplemented)
 	}
+}
+
+func (b *Boss) handleMessage(msg *msgbus.Message) error {
+	var job Job
+
+	log.Debugf("Payload: %s", msg.Payload)
+
+	err := json.Unmarshal(msg.Payload, &job)
+	if err != nil {
+		log.Errorf("error decoding message payload: %s", err)
+		return err
+	}
+
+	b.Submit(&job)
+
+	return nil
 }
 
 // Worker ...

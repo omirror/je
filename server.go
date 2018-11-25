@@ -9,7 +9,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/prologic/je/worker"
 	"github.com/unrolled/logger"
 )
 
@@ -39,8 +38,8 @@ func (s *Server) ListenAndServe() {
 	log.Fatal(s.server.ListenAndServe())
 }
 
-func (s *Server) GetWorker(id string) *worker.Worker {
-	return &worker.Worker{}
+func (s *Server) GetWorker(id string) *Worker {
+	return &Worker{}
 }
 
 func (s *Server) AddRoute(method, path string, handler http.Handler) {

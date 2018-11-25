@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/prologic/je/client"
+	"github.com/prologic/je"
 )
 
 // outputCmd represents the run command
@@ -22,7 +22,7 @@ output of the job.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		uri := viper.GetString("uri")
-		client := client.NewClient(uri, nil)
+		client := je.NewClient(uri, nil)
 
 		id := args[0]
 
@@ -45,7 +45,7 @@ func init() {
 	)
 }
 
-func output(client *client.Client, id string, follow bool) int {
+func output(client *je.Client, id string, follow bool) int {
 	r, err := client.Output(id, follow)
 	if err != nil {
 		log.Errorf("error retrieving logs for job %s: %s", id, err)

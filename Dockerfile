@@ -14,7 +14,9 @@ RUN apk add --update git make build-base && \
 
 WORKDIR /go/src/github.com/$REPO
 COPY . /go/src/github.com/$REPO
+RUN make deps
 RUN make TAG=$TAG BUILD=$BUILD build
+
 RUN cd samples && \
     gcc -o hello hello.c
 
@@ -37,4 +39,4 @@ EXPOSE 8000/tcp
 VOLUME /data
 
 ENTRYPOINT ["/je"]
-CMD ["-datadir", "/data"]
+CMD ["--help"]

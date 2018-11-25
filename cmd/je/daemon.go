@@ -31,8 +31,8 @@ func init() {
 	)
 
 	daemonCmd.Flags().StringP(
-		"data", "d", "data",
-		"data directory to store job data",
+		"data", "d", "file://data",
+		"where to persist job data",
 	)
 
 	daemonCmd.Flags().StringP(
@@ -57,7 +57,7 @@ func daemon(cmd *cobra.Command, args ...string) int {
 		return 1
 	}
 
-	dataPath, err := cmd.Flags().GetString("data")
+	dataURI, err := cmd.Flags().GetString("data")
 	if err != nil {
 		log.Errorf("error getting -d/--data flag: %s", err)
 		return 1
@@ -83,9 +83,9 @@ func daemon(cmd *cobra.Command, args ...string) int {
 
 	metrics := je.InitMetrics("je")
 
-	data, err := je.InitData(dataPath)
+	data, err := je.InitData(dataURI)
 	if err != nil {
-		log.Errorf("error initializing data storage: %s", err)
+		log.Errorf("error initializing data: %s", err)
 		return 1
 	}
 
