@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -264,11 +265,53 @@ func (b *Boss) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch r.URL.Path {
-	case "/write":
-	case "/kill":
-	case "/close":
-		http.Error(w, "Not Implemented", http.StatusNotImplemented)
+	tokens := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	if len(tokens) != 2 {
+		msg := fmt.Sprintf("unexpected number of tokens %d expected 2", len(tokens))
+		log.Error(msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+
+	method := tokens[0]
+	id := tokens[1]
+
+	worker := b.GetWorker(id)
+	if worker == nil {
+		msg := fmt.Sprintf("worker %s not found", id)
+		log.Error(msg)
+		http.Error(w, msg, http.StatusNotFound)
+		return
+	}
+
+	switch method {
+	case "write":
+		_, err := worker.Write(r.Body)
+		// TODO: Deal with less bytes written than expected
+		if err != nil {
+			msg := fmt.Sprintf("error writing to worker %s: %s", id, err)
+			log.Error(msg)
+			http.Error(w, msg, http.StatusNotFound)
+		}
+	case "kill":
+		force := r.URL.Query().Get("force") != ""
+		err := worker.Kill(force)
+		if err != nil {
+			msg := fmt.Sprintf("error killing worker %s: %s", id, err)
+			log.Error(msg)
+			http.Error(w, msg, http.StatusNotFound)
+		}
+	case "close":
+		err := worker.Close()
+		if err != nil {
+			msg := fmt.Sprintf("error closing worker %s: %s", id, err)
+			log.Error(msg)
+			http.Error(w, msg, http.StatusNotFound)
+		}
+	default:
+		msg := fmt.Sprintf("method not implemented: %s", method)
+		log.Error(msg)
+		http.Error(w, msg, http.StatusNotImplemented)
 	}
 }
 
