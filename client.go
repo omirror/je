@@ -228,6 +228,27 @@ func (c *Client) Update(job *Job) (res []*Job, err error) {
 	return c.request("POST", url, bytes.NewBuffer(body))
 }
 
+// Read ...
+func (c *Client) Read(id string) (r io.ReadCloser, err error) {
+	url := fmt.Sprintf("%s/read/%s", c.url, id)
+
+	client := &http.Client{}
+
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Errorf("error constructing request to %s: %s", url, err)
+		return
+	}
+
+	response, err := client.Do(request)
+	if err != nil {
+		log.Errorf("error sending request to %s: %s", url, err)
+		return
+	}
+
+	return response.Body, nil
+}
+
 // Write ...
 func (c *Client) Write(id string, input io.Reader) (err error) {
 	url := fmt.Sprintf("%s/write/%s", c.url, id)

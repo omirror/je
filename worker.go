@@ -265,6 +265,7 @@ func (b *Boss) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch r.URL.Path {
+	case "/write":
 	case "/kill":
 	case "/close":
 		http.Error(w, "Not Implemented", http.StatusNotImplemented)

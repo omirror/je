@@ -31,6 +31,8 @@ func NewRemoteData(uri string) (Data, error) {
 
 func (d *RemoteData) Read(id ID, dtype DataType) (io.ReadCloser, error) {
 	switch dtype {
+	case DATA_INPUT:
+		return d.client.Read(id.String())
 	case DATA_OUTPUT:
 		return d.client.Output(id.String(), false)
 	case DATA_LOGS:

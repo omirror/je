@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -283,6 +284,37 @@ func (s *Server) CreateHandler() httprouter.Handle {
 	}
 }
 
+// ReadHandler ...
+func (s *Server) ReadHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		metrics.CounterVec("server", "requests").WithLabelValues("GET", "/read").Inc()
+
+		id := ParseId(p.ByName("id"))
+
+		if id <= 0 {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		job, err := store.Get(id)
+		if err != nil {
+			http.Error(w, "Not Found", http.StatusNotFound)
+			return
+		}
+
+		output, err := data.Read(job.ID, DATA_INPUT)
+		if err != nil {
+			log.Errorf("error reading job input for #%d: %s", id, err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		defer output.Close()
+
+		w.Header().Set("Content-Type", "text/plain")
+		io.Copy(w, output)
+	}
+}
+
 // WriteHandler ...
 func (s *Server) WriteHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -342,6 +374,49 @@ func (s *Server) CloseHandler() httprouter.Handle {
 
 		err = worker.Close()
 		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+// UpdateHandler ...
+func (s *Server) UpdateHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		var job Job
+
+		metrics.CounterVec("server", "requests").WithLabelValues("POST", "/update").Inc()
+
+		id := ParseId(p.ByName("id"))
+
+		if id <= 0 {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		_, err := store.Get(id)
+		if err != nil {
+			http.Error(w, "Not Found", http.StatusNotFound)
+			return
+		}
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Errorf("error reading job update request body for #%d: %s", id, err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		err = json.Unmarshal(body, &job)
+		if err != nil {
+			log.Errorf("error decoding job update request for #%d: %s", id, err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		err = store.Save(&job)
+		if err != nil {
+			log.Errorf("error saving job #%d: %s", id, err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
