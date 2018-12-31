@@ -1,10 +1,10 @@
 # je - Job Engine
 
-[![Build Status](https://travis-ci.org/prologic/je.svg)](https://travis-ci.org/prologic/je)
+[![Build Status](https://cloud.drone.io/api/badges/prologic/je/status.svg)](https://cloud.drone.io/prologic/je)
 [![CodeCov](https://codecov.io/gh/prologic/je/branch/master/graph/badge.svg)](https://codecov.io/gh/prologic/je)
 [![Go Report Card](https://goreportcard.com/badge/prologic/je)](https://goreportcard.com/report/prologic/je)
 [![GoDoc](https://godoc.org/github.com/prologic/je?status.svg)](https://godoc.org/github.com/prologic/je) 
-[![](https://images.microbadger.com/badges/image/prologic/je.svg)](https://microbadger.com/images/prologic/je "Get your own image badge on microbadger.com")
+[![Sourcegraph](https://sourcegraph.com/github.com/prologic/je/-/badge.svg)](https://sourcegraph.com/github.com/prologic/je?badge)
 
 A distributed job execution engine for the execution of batch jobs, workflows,
 remediations and more. You *could* also use `je` as a simple FaaS
