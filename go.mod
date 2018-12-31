@@ -23,9 +23,11 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.1
 	github.com/steveyen/gtreap v0.0.0-20150807155958-0abe01ef9be2 // indirect
+	github.com/stretchr/testify v1.2.2
 	github.com/tinylib/msgp v1.1.0 // indirect
 	github.com/unrolled/logger v0.0.0-20180528161137-f2fe13954c71
 	github.com/willf/bitset v1.1.9 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
+	gopkg.in/vmihailenco/msgpack.v2 v2.9.1
 )
