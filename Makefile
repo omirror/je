@@ -12,7 +12,7 @@ BUILD?=-dev
 BUILD_TAGS="netgo static_build"
 BUILD_LDFLAGS="-w -X github.com/$(REPO).GitCommit=$(COMMIT) -X github.com/$(REPO)/Build=$(BUILD)"
 
-all: dev
+all: build
 
 dev: build
 	@./cmd/$(SERVER)/$(SERVER)
