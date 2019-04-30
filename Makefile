@@ -1,50 +1,53 @@
-.PHONY: dev build image test deps clean
+.PHONY: dev build deps generate install image release profile bench test clean
 
 CGO_ENABLED=0
-COMMIT=`git rev-parse --short HEAD`
-LIBRARY=je
-SERVER=je
-CLIENT=job
-REPO?=prologic/$(LIBRARY)
-TAG?=latest
-BUILD?=-dev
+VERSION=$(shell git describe --abbrev=0 --tags)
+COMMIT=$(shell git rev-parse --short HEAD)
 
-BUILD_TAGS="netgo static_build"
-BUILD_LDFLAGS="-w -X github.com/$(REPO).GitCommit=$(COMMIT) -X github.com/$(REPO)/Build=$(BUILD)"
-
-all: build
+all: dev
 
 dev: build
-	@./cmd/$(SERVER)/$(SERVER)
+	@./je -v
+	@./job --version
+
+build: clean generate
+	@go build \
+		-tags "netgo static_build" -installsuffix netgo \
+		-ldflags "-w -X $(shell go list).Version=$(VERSION) -X $(shell go list).Commit=$(COMMIT)" \
+		./cmd/je/...
+	@go build \
+		-tags "netgo static_build" -installsuffix netgo \
+		-ldflags "-w -X $(shell go list).Version=$(VERSION) -X $(shell go list).Commit=$(COMMIT)" \
+		./cmd/job/...
 
 deps:
-	@go get ./...
+	@[ -f $(shell go env GOPATH)/bin/rice ] || go get -u github.com/GeertJohan/go.rice/rice
 
-build:
-	@echo " -> Building $(SERVER) $(TAG)$(BUILD) ..."
-	@cd cmd/$(SERVER) && \
-		go build -tags $(BUILD_TAGS) -installsuffix netgo \
-		-ldflags $(BUILD_LDFLAGS) .
-	@echo "Built $$(./cmd/$(SERVER)/$(SERVER) -v)"
-	@echo
-	@echo " -> Building $(CLIENT) $(TAG)$(BUILD) ..."
-	@cd cmd/$(CLIENT) && \
-		go build -tags $(BUILD_TAGS) -installsuffix netgo \
-		-ldflags $(BUILD_LDFLAGS) .
-	@echo "Built $$(./cmd/$(CLIENT)/$(CLIENT) --version)"
+generate: deps
+	@go generate $(shell go list)/...
+
+install: build
+	@go install ./cmd/je/...
+	@go install ./cmd/job/...
 
 image:
-	@docker build --build-arg TAG=$(TAG) --build-arg BUILD=$(BUILD) -t $(REPO):$(TAG) .
-	@echo "Image created: $(REPO):$(TAG)"
+	@docker build -t prologic/je .
 
-profile:
-	@go test -cpuprofile cpu.prof -memprofile mem.prof -v -bench ./...
+release:
+	@./tools/release.sh
 
-bench:
-	@go test -v -bench ./...
+profile: build
+	@go test -cpuprofile cpu.prof -memprofile mem.prof -v -bench .
 
-test:
-	@go test -v -cover -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... -race ./...
+bench: build
+	@go test -v -benchmem -bench=. .
+
+test: build
+	@go test -v \
+		-cover -coverprofile=coverage.txt -covermode=atomic \
+		-coverpkg=$(shell go list) \
+		-race \
+		.
 
 clean:
-	@rm -rf $(APP)
+	@git clean -f -d -X

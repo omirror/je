@@ -5,6 +5,8 @@
 *.log
 *.bak
 
+/je
+/job
 /log
 /data
 /dist

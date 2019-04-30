@@ -2,6 +2,7 @@ module github.com/prologic/je
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/GeertJohan/go.rice v1.0.0 // indirect
 	github.com/RoaringBitmap/roaring v0.4.16 // indirect
 	github.com/Smerity/govarint v0.0.0-20150407073650-7265e41f48f1 // indirect
 	github.com/blevesearch/bleve v0.7.0
