@@ -22,7 +22,6 @@ build: clean generate
 		./cmd/job/...
 
 deps:
-	@[ -f $(shell go env GOPATH)/bin/rice ] || go get -u github.com/GeertJohan/go.rice/rice
 
 generate: deps
 	@go generate $(shell go list)/...

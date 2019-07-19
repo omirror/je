@@ -1,7 +1,5 @@
 package main
 
-//go:generate rice embed-go
-
 import (
 	"flag"
 	"fmt"
