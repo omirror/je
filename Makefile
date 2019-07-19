@@ -1,13 +1,14 @@
 .PHONY: dev build deps generate install image release profile bench test clean
 
 CGO_ENABLED=0
-VERSION=$(shell git describe --abbrev=0 --tags)
+VERSION=$(shell git describe --abbrev=0 --tags 2>/dev/null || echo "0.0.0")
 COMMIT=$(shell git rev-parse --short HEAD)
 
 all: dev
 
 dev: build
 	@./je -v
+	@echo
 	@./job --version
 
 build: clean generate
