@@ -56,4 +56,4 @@ INFO[0000] je 0.0.1-dev (HEAD) listening on 0.0.0.0:8000
 
 ## License
 
-je is licensed under the [MIT License](https://github.com/prologic/je/blob/master/LICENSE)
+je is licensed under the term of the [MIT License](https://github.com/prologic/je/blob/master/LICENSE)
