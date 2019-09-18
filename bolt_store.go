@@ -1,7 +1,6 @@
 package je
 
 import (
-	"encoding/binary"
 	"os"
 	"path"
 	"time"
@@ -9,17 +8,11 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/blevesearch/bleve"
-	"github.com/coreos/bbolt"
+	bolt "github.com/coreos/bbolt"
 
 	"github.com/prologic/je/codec"
 	"github.com/prologic/je/codec/json"
 )
-
-func idToBytes(id ID) []byte {
-	b := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, uint64(id))
-	return b
-}
 
 type BoltStore struct {
 	db     *bolt.DB
@@ -59,7 +52,7 @@ func (store *BoltStore) Save(job *Job) error {
 			return err
 		}
 
-		key := idToBytes(job.ID)
+		key := job.ID.Bytes()
 		return b.Put(key, buf)
 	})
 
@@ -84,7 +77,7 @@ func (store *BoltStore) Get(id ID) (*Job, error) {
 			return nil
 		}
 
-		key := idToBytes(id)
+		key := id.Bytes()
 		buf := b.Get(key)
 		if buf == nil {
 			log.Errorf("job #%d not found", id)
@@ -113,7 +106,7 @@ func (store *BoltStore) Find(ids ...ID) (jobs []*Job, err error) {
 
 		for _, id := range ids {
 			var job Job
-			key := idToBytes(id)
+			key := id.Bytes()
 			buf := b.Get(key)
 			err := store.codec.Unmarshal(buf, &job)
 			if err != nil {

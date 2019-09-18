@@ -1,6 +1,7 @@
 package je
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"sync"
@@ -23,6 +24,12 @@ type ID uint64
 
 func (id ID) String() string {
 	return fmt.Sprintf("%d", id)
+}
+
+func (id ID) Bytes() []byte {
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, uint64(id))
+	return b
 }
 
 func ParseId(s string) ID {

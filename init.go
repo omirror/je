@@ -80,6 +80,14 @@ func InitDB(uri string) (Store, error) {
 		}
 		log.Infof("Using BoltStore %s", uri)
 		return db, nil
+	case "bitcask":
+		db, err = NewBitcaskStore(u.Path)
+		if err != nil {
+			log.Errorf("error creating store %s: %s", uri, err)
+			return nil, err
+		}
+		log.Infof("Using BitcaskStore %s", uri)
+		return db, nil
 	default:
 		err := fmt.Errorf("unsupported db uri: %s", uri)
 		log.Error(err)
