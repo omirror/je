@@ -26,7 +26,7 @@ require (
 	github.com/mmcloughlin/professor v0.0.0-20170922221822-6b97112ab8b3
 	github.com/mschoch/smat v0.0.0-20160514031455-90eadee771ae // indirect
 	github.com/philhofer/fwd v1.0.0 // indirect
-	github.com/prologic/bitcask v0.3.4
+	github.com/prologic/bitcask v0.3.5
 	github.com/prometheus/client_golang v0.9.4
 	github.com/remyoudompheng/bigfft v0.0.0-20190321074620-2f0d2b0e0001 // indirect
 	github.com/rs/xid v1.2.1
