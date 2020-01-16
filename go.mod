@@ -21,7 +21,7 @@ require (
 	github.com/glycerine/goconvey v0.0.0-20190315024820-982ee783a72e // indirect
 	github.com/hpcloud/tail v1.0.0
 	github.com/jmhodges/levigo v1.0.0 // indirect
-	github.com/julienschmidt/httprouter v1.2.0
+	github.com/julienschmidt/httprouter v1.3.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mmcloughlin/professor v0.0.0-20170922221822-6b97112ab8b3
 	github.com/mschoch/smat v0.0.0-20160514031455-90eadee771ae // indirect
