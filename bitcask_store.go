@@ -64,7 +64,7 @@ func (store *BitcaskStore) Get(id ID) (job *Job, err error) {
 			err = &KeyError{id, ErrNotExist}
 			return
 		}
-		log.Error("error feteching job #%d : %s", id, err)
+		log.Errorf("error feteching job #%d : %s", id, err)
 		return
 	}
 
@@ -101,7 +101,7 @@ func (store *BitcaskStore) All() (jobs []*Job, err error) {
 
 		val, err := store.db.Get(key)
 		if err != nil {
-			log.Error("error fetching job %s : %s", string(key), err)
+			log.Errorf("error fetching job %s : %s", string(key), err)
 			return err
 		}
 		if err := store.codec.Unmarshal(val, &job); err != nil {
