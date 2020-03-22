@@ -12,7 +12,7 @@ import (
 	// Routing
 	"github.com/julienschmidt/httprouter"
 
-	"github.com/prologic/je/worker"
+	"github.com/prologic/je/pool"
 )
 
 const (
@@ -34,7 +34,7 @@ type Server struct {
 	server *http.Server
 
 	// Worker Pool
-	pool *worker.Pool
+	pool *pool.Pool
 
 	// Router
 	router *httprouter.Router
@@ -101,7 +101,10 @@ func NewServer(bind string, options *Options) *Server {
 		},
 
 		// Worker Pool
-		pool: worker.NewPool(backlog, threads),
+		pool: pool.NewPool(
+			pool.WithBacklog(backlog),
+			pool.WithMaxJobs(thread),
+		),
 
 		// Router
 		router: router,

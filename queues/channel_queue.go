@@ -1,26 +1,22 @@
-package worker
+package queues
 
 import (
 	"fmt"
+
+	"github.com/prologic/je"
 )
 
-type Queue interface {
-	Submit(task Task) error
-	Channel() chan Task
-	Close() error
-}
-
 type ChannelQueue struct {
-	q chan Task
+	q chan je.Task
 }
 
 func NewChannelQueue(buffer int) *ChannelQueue {
 	return &ChannelQueue{
-		q: make(chan Task, buffer),
+		q: make(chan je.Task, buffer),
 	}
 }
 
-func (q *ChannelQueue) Submit(task Task) error {
+func (q *ChannelQueue) Submit(task je.Task) error {
 	select {
 	case q.q <- task:
 		task.Enqueue()
@@ -30,7 +26,7 @@ func (q *ChannelQueue) Submit(task Task) error {
 	}
 }
 
-func (q *ChannelQueue) Channel() chan Task {
+func (q *ChannelQueue) Channel() chan je.Task {
 	return q.q
 }
 
