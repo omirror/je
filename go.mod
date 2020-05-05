@@ -30,7 +30,7 @@ require (
 	github.com/prometheus/client_golang v0.9.4
 	github.com/remyoudompheng/bigfft v0.0.0-20190321074620-2f0d2b0e0001 // indirect
 	github.com/rs/xid v1.2.1
-	github.com/sirupsen/logrus v1.4.2
+	github.com/sirupsen/logrus v1.6.0
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.2
