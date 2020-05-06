@@ -1,16 +1,13 @@
 # je - Job Engine
 
-[![Build Status](https://cloud.drone.io/api/badges/prologic/je/status.svg)](https://cloud.drone.io/prologic/je)
+![Build](https://github.com/prologic/je/workflows/Build/badge.svg)
 [![CodeCov](https://codecov.io/gh/prologic/je/branch/master/graph/badge.svg)](https://codecov.io/gh/prologic/je)
 [![Go Report Card](https://goreportcard.com/badge/prologic/je)](https://goreportcard.com/report/prologic/je)
 [![GoDoc](https://godoc.org/github.com/prologic/je?status.svg)](https://godoc.org/github.com/prologic/je) 
-[![Sourcegraph](https://sourcegraph.com/github.com/prologic/je/-/badge.svg)](https://sourcegraph.com/github.com/prologic/je?badge)
 
 A distributed job execution engine for the execution of batch jobs, workflows,
 remediations and more. You *could* also use `je` as a simple FaaS
 (*Function as a Service*) or "Serverless Computing" aka "Lambda".
-
-**Status:** Early alpha stages, in heavy development.
 
 ## Features
 
@@ -21,7 +18,7 @@ remediations and more. You *could* also use `je` as a simple FaaS
 ## Install
 
 ```#!bash
-$ go install github.com/prologic/je/...
+$ go get github.com/prologic/je/...
 ```
 
 ## Usage
