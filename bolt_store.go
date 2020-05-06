@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/blevesearch/bleve"
-	bolt "github.com/coreos/bbolt"
+	bolt "go.etcd.io/bbolt"
 
 	"github.com/prologic/je/codec"
 	"github.com/prologic/je/codec/json"
