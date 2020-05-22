@@ -2,7 +2,7 @@ module github.com/prologic/je
 
 require (
 	github.com/RoaringBitmap/roaring v0.4.23 // indirect
-	github.com/blevesearch/bleve v1.0.7
+	github.com/blevesearch/bleve v1.0.8
 	github.com/cznic/b v0.0.0-20181122101859-a26611c4d92d // indirect
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
 	github.com/cznic/strutil v0.0.0-20181122101858-275e90344537 // indirect
@@ -30,7 +30,6 @@ require (
 	github.com/unrolled/logger v0.0.0-20190327162521-be1a2406c7c9
 	go.etcd.io/bbolt v1.3.4
 	golang.org/x/sys v0.0.0-20200501145240-bc7a7d42d5c3 // indirect
-	google.golang.org/appengine v1.5.0 // indirect
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.1
 )
 

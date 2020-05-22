@@ -37,6 +37,8 @@ github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kB
 github.com/bketelsen/crypt v0.0.3-0.20200106085610-5cbc8cc4026c/go.mod h1:MKsuJmJgSg28kpZDP6UIiPt0e0Oz0kqKNGyRaWEPv84=
 github.com/blevesearch/bleve v1.0.7 h1:4PspZE7XABMSKcVpzAKp0E05Yer1PIYmTWk+1ngNr/c=
 github.com/blevesearch/bleve v1.0.7/go.mod h1:3xvmBtaw12Y4C9iA1RTzwWCof5j5HjydjCTiDE2TeE0=
+github.com/blevesearch/bleve v1.0.8 h1:XBty4rmSs5dBqOhGOL4GojjeHGNuBmyzQLNTTEW6qSU=
+github.com/blevesearch/bleve v1.0.8/go.mod h1:rVSPClRCgzWIJJqDjfiNjXxycE1jCODqVYWeTId8A+M=
 github.com/blevesearch/blevex v0.0.0-20190916190636-152f0fe5c040 h1:SjYVcfJVZoCfBlg+fkaq2eoZHTf5HaJfaTeTkOtyfHQ=
 github.com/blevesearch/blevex v0.0.0-20190916190636-152f0fe5c040/go.mod h1:WH+MU2F4T0VmSdaPX+Wu5GYoZBrYWdOZWSjzvYcDmqQ=
 github.com/blevesearch/go-porterstemmer v1.0.3 h1:GtmsqID0aZdCSNiY8SkuPJ12pD4jI+DdXTAn4YRcHCo=
@@ -49,8 +51,14 @@ github.com/blevesearch/snowballstem v0.9.0 h1:lMQ189YspGP6sXvZQ4WZ+MLawfV8wOmPoD
 github.com/blevesearch/snowballstem v0.9.0/go.mod h1:PivSj3JMc8WuaFkTSRDW2SlrulNWPl4ABg1tC/hlgLs=
 github.com/blevesearch/zap/v11 v11.0.7 h1:nnmAOP6eXBkqEa1Srq1eqA5Wmn4w+BZjLdjynNxvd+M=
 github.com/blevesearch/zap/v11 v11.0.7/go.mod h1:bJoY56fdU2m/IP4LLz/1h4jY2thBoREvoqbuJ8zhm9k=
+github.com/blevesearch/zap/v11 v11.0.8 h1:Pnes647E5BkBpXYiX94LYZeKG/6oeSnQ4AjeAFl+Nl8=
+github.com/blevesearch/zap/v11 v11.0.8/go.mod h1:VlWmhlTeVIT1aItOGUjABKblNp9gpQXnHtpWQi3vhNw=
 github.com/blevesearch/zap/v12 v12.0.7 h1:y8FWSAYkdc4p1dn4YLxNNr1dxXlSUsakJh2Fc/r6cj4=
 github.com/blevesearch/zap/v12 v12.0.7/go.mod h1:70DNK4ZN4tb42LubeDbfpp6xnm8g3ROYVvvZ6pEoXD8=
+github.com/blevesearch/zap/v12 v12.0.8 h1:8aQEmkrJ/qNgmGYZomhDdE133ZxS+5tY58p2CgkV3mk=
+github.com/blevesearch/zap/v12 v12.0.8/go.mod h1:GD0cwdeEUvaAW2qfK/8COKg6Ru8dl9DBotl+U2tvWmA=
+github.com/blevesearch/zap/v13 v13.0.0 h1:AEPlDdoxOTOo5NFQlecIDzNZOJIHCIql4Uc7SdOrlLE=
+github.com/blevesearch/zap/v13 v13.0.0/go.mod h1:bONNlOmL4gWrJaSYpuE78VnYmq+RJN8rwoG2+aEZrV4=
 github.com/cespare/xxhash v1.1.0 h1:a6HrQnmkObjyL+Gs60czilIUGqrzKutQD6XZog3p+ko=
 github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghfAqPWnc=
 github.com/cespare/xxhash/v2 v2.1.1 h1:6MnRN8NT7+YBpUIWxHtefFZOKTAPgGjpQSxqLNn0+qY=
